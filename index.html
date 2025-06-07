@@ -41,7 +41,6 @@
       box-shadow: 0 2px 12px #0008;
       touch-action: manipulation;
       border-radius: 8px;
-      /* Принудительно убираем артефакты на мобилках */
       max-width: 98vw;
       max-height: 98vw;
     }
@@ -52,12 +51,11 @@
   <div class="game-field-container">
     <canvas id="game-canvas"></canvas>
   </div>
-  <div class="bottom-panel">Навигация/кнопки v1.0.3</div>
+  <div class="bottom-panel">Навигация/кнопки v1.0.4</div>
   <script>
     // === НАСТРОЙКИ СЕТКИ ===
     const GRID_SIZE = 10;
 
-    // Цвета:
     const FIELD_BG = "#353c48";
     const CELL_BG = "#353c48";
     const CELL_BORDER = "#23272e";
@@ -67,47 +65,43 @@
     const ctx = canvas.getContext('2d');
     let selectedCell = null;
 
-    // --- Логгирование ---
     function log(...args) {
       if (window && window.console) console.log(...args);
     }
 
-    // --- Адаптивный сайзинг ---
+    // Исправленная функция сайзинга — учитывает РЕАЛЬНУЮ высоту панелей
     function resizeCanvas() {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      // Учитываем панели сверху и снизу (2*48+2*12)
-      const panelSpace = 2 * (48 + 12);
+      // Получаем высоту верхней и нижней панелей
+      const topPanel = document.querySelector('.top-panel');
+      const bottomPanel = document.querySelector('.bottom-panel');
+      const topH = topPanel ? topPanel.getBoundingClientRect().height : 0;
+      const bottomH = bottomPanel ? bottomPanel.getBoundingClientRect().height : 0;
+      const panelsHeight = topH + bottomH;
 
       // Канвас - квадрат, максимально возможный по меньшей стороне
       let size = Math.min(
-        Math.floor((h - panelSpace) * 0.98), // почти вся высота кроме панелей
+        Math.floor((h - panelsHeight) * 0.98), // высота с учетом панелей
         Math.floor(w * 0.98)                 // почти вся ширина
       );
-
-      // Важно на всякий случай: минимально 200px (можно меньше если надо)
       size = Math.max(size, 200);
 
-      // Ставим визуальный размер
       canvas.style.width = size + 'px';
       canvas.style.height = size + 'px';
 
-      // Для retina - логический размер выше
       const dpr = window.devicePixelRatio || 1;
       canvas.width = size * dpr;
       canvas.height = size * dpr;
-      // Применяем трансформацию для учета dpr:
       ctx.setTransform(1,0,0,1,0,0);
       ctx.scale(dpr, dpr);
 
-      log("[resizeCanvas]", { w, h, size, dpr, canvasCssWidth: canvas.style.width, canvasWidth: canvas.width });
+      log("[resizeCanvas]", { w, h, size, dpr, topH, bottomH });
 
       drawGrid();
     }
 
-    // --- Рисуем сетку ---
     function drawGrid() {
-      // size в css-пикселях (так же, как canvas.style.width/height)
       const size = parseFloat(canvas.style.width) || 300;
       ctx.clearRect(0, 0, size, size);
       const cellSize = size / GRID_SIZE;
@@ -125,7 +119,6 @@
       }
     }
 
-    // --- Клик и тач - координаты в CSS-пикселях ---
     function getCellByCoords(evt) {
       const rect = canvas.getBoundingClientRect();
       let clientX, clientY;
@@ -136,12 +129,10 @@
         clientX = evt.clientX;
         clientY = evt.clientY;
       }
-      // Без всяких переводов: работаем только с css-пикселями
       let x = clientX - rect.left;
       let y = clientY - rect.top;
       const cellSize = rect.width / GRID_SIZE;
 
-      // ПРОВЕРКА-где нажали в логах:
       log(
         "[getCellByCoords]",
         { clientX, clientY, rect: {...rect}, x, y, cellSize }
@@ -150,7 +141,6 @@
       const col = Math.floor(x / cellSize);
       const row = Math.floor(y / cellSize);
 
-      // Для отладки:
       if (
         col < 0 || row < 0 ||
         col >= GRID_SIZE || row >= GRID_SIZE
