@@ -6,6 +6,7 @@
     <div class="modal-changelog-header">
       <div class="modal-changelog-title">История изменений</div>
       <nav class="changelog-nav">
+        <a href="#v1-1-2" class="changelog-nav-link">1.1.2</a>
         <a href="#v1-1-1+" class="changelog-nav-link">1.1.1+</a>
         <a href="#v1-1-1" class="changelog-nav-link">1.1.1</a>
         <a href="#v1-1-0" class="changelog-nav-link">1.1.0</a>
@@ -16,7 +17,14 @@
     </div>
     <div class="modal-changelog-body" id="changelogBody">
 <pre>
-
+  
+<h3 id="v1-1-2">Версия 1.1.2</h3>
+- При клике по DEV ― модалка открывается, при повторном ― закрывается.
+- Логируется открытие/закрытие/инициализация/якоря в консоль.
+- Помимо внутреннего Esc (в модалке), глобальный Esc на всей странице тоже закрывает, если она видима (даже если вдруг фокус ушёл).
+- Навес listener'ы внутри модалки только единожды (data-inited).
+- Всё и по UX, и по DX теперь надёжно и проверяемо!
+  
 <h3 id="v1-1-1+">Версия 1.1.1+</h3>
 – Модалка автоматически наследует тему.
 – Кнопка "DEV" — видна всегда, выдвинута поверх, всегда контрастная для любой темы.
