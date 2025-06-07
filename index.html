@@ -20,13 +20,22 @@
       min-height: 100vh;
       height: 100vh;
     }
-    .top-panel, .bottom-panel {
+    .top-panel {
       min-height: 48px;
       padding: 12px;
       background: #181b21;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    .bottom-panel {
+      min-height: 90px; /* стало больше */
+      padding: 12px;
+      background: #181b21;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* Можно потом добавить стили для магазина */
     }
     .game-field-container {
       flex: 1;
@@ -51,25 +60,19 @@
   <div class="game-field-container">
     <canvas id="game-canvas"></canvas>
   </div>
-  <div class="bottom-panel">Навигация/кнопки v1.0.4</div>
+  <div class="bottom-panel">Навигация/кнопки v1.0.5</div>
   <script>
-    // === НАСТРОЙКИ СЕТКИ ===
     const GRID_SIZE = 10;
-
     const FIELD_BG = "#353c48";
     const CELL_BG = "#353c48";
     const CELL_BORDER = "#23272e";
     const SELECT_BG = "#6488f0";
-
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     let selectedCell = null;
 
-    function log(...args) {
-      if (window && window.console) console.log(...args);
-    }
+    function log(...args) { if (window && window.console) console.log(...args); }
 
-    // Исправленная функция сайзинга — учитывает РЕАЛЬНУЮ высоту панелей
     function resizeCanvas() {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -83,17 +86,16 @@
       // Канвас - квадрат, максимально возможный по меньшей стороне
       let size = Math.min(
         Math.floor((h - panelsHeight) * 0.98), // высота с учетом панелей
-        Math.floor(w * 0.98)                 // почти вся ширина
+        Math.floor(w * 0.98)
       );
       size = Math.max(size, 200);
 
       canvas.style.width = size + 'px';
       canvas.style.height = size + 'px';
-
       const dpr = window.devicePixelRatio || 1;
       canvas.width = size * dpr;
       canvas.height = size * dpr;
-      ctx.setTransform(1,0,0,1,0,0);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
 
       log("[resizeCanvas]", { w, h, size, dpr, topH, bottomH });
@@ -133,24 +135,18 @@
       let y = clientY - rect.top;
       const cellSize = rect.width / GRID_SIZE;
 
-      log(
-        "[getCellByCoords]",
-        { clientX, clientY, rect: {...rect}, x, y, cellSize }
-      );
+      log("[getCellByCoords]", { clientX, clientY, rect: {...rect}, x, y, cellSize });
 
       const col = Math.floor(x / cellSize);
       const row = Math.floor(y / cellSize);
 
-      if (
-        col < 0 || row < 0 ||
-        col >= GRID_SIZE || row >= GRID_SIZE
-      ) {
+      if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) {
         log("Клик вне сетки!", { row, col, x, y });
         return null;
       }
 
       log("Определена ячейка", { row, col });
-      return {row, col};
+      return { row, col };
     }
 
     function handleClick(evt) {
@@ -163,7 +159,6 @@
     }
 
     canvas.addEventListener('click', handleClick);
-
     canvas.addEventListener('touchstart', (evt) => {
       evt.preventDefault();
       handleClick(evt);
@@ -171,7 +166,6 @@
 
     window.addEventListener('resize', resizeCanvas);
 
-    // --- Инициализация ---
     resizeCanvas();
   </script>
 </body>
