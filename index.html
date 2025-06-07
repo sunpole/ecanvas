@@ -1,494 +1,520 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>Game Grid Test</title>
-  <style>
-    :root {
-      /* Темная тема (по умолчанию) */
-      --color-bg: #23272e;
-      --color-panel: #181b21;
-      --color-panel-alt: #23272e;
-      --color-card: #353c48;
-      --color-cell: #353c48;
-      --color-border: #23272e;
-      --color-accent: #6488f0;
-      --color-text-main: #fcfcfc;
-      --color-text-sub: #b9c6d3;
-      --color-link: #8cb3fc;
-      --color-link-hover: #5476ac;
-    }
-    html[data-theme='light'] {
-      --color-bg: #f6f7f9;
-      --color-panel: #f0f1f5;
-      --color-panel-alt: #e4eaf2;
-      --color-card: #eaf1fa;
-      --color-cell: #eaf1fa;
-      --color-border: #bdd1e5;
-      --color-accent: #20539f;
-      --color-text-main: #20222a;
-      --color-text-sub: #384049;
-      --color-link: #1951a5;
-      --color-link-hover: #11336b;
-    }
-    html, body {
-      height: 100%;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: var(--color-bg);
-      color: var(--color-text-main);
-      font-family: system-ui, sans-serif;
-      overscroll-behavior: none;
-      transition: background 0.2s, color 0.2s;
-    }
-    body, .main-wrapper {
-      height: 100dvh;
-      width: 100vw;
-      min-height: 100dvh;
-      min-width: 100vw;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-    }
-    .main-wrapper {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      min-width: 0;
-      height: 100dvh;
-      width: 100vw;
-    }
-    .top-panel, .bottom-panel {
-      background: var(--color-panel);
-      color: var(--color-text-main);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      z-index: 1;
-      border-radius: 0;
-      box-sizing: border-box;
-      transition: background 0.2s, color 0.2s;
-    }
-    .top-panel {
-      min-height: 48px;
-      padding: 12px 0 12px env(safe-area-inset-left,0), 12px 0 12px env(safe-area-inset-right,0);
-      border-top-left-radius: 0.7rem;
-      border-top-right-radius: 0.7rem;
-      margin-bottom: 0;
-    }
-    .bottom-panel {
-      min-height: 90px;
-      padding: 12px 0 env(safe-area-inset-bottom, 0) 0;
-      border-bottom-left-radius: 0.7rem;
-      border-bottom-right-radius: 0.7rem;
-      margin-top: 0;
-    }
-    .theme-toggle {
-      margin-left: 1rem;
-      padding: 4px 16px;
-      border-radius: 6px;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      color: var(--color-text-main);
-      background: var(--color-panel-alt);
-      box-shadow: 0 2px 12px #0002;
-      transition: background 0.2s, color 0.2s;
-    }
-    .theme-toggle:active {
-      background: var(--color-accent);
-      color: #fff;
-    }
+<!DOCTYPE html>  
+<html lang="ru">  
+<head>  
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">  
+  <title>Game Grid Test</title>  
+  <style>  
+    :root {  
+      --color-bg: #23272e;  
+      --color-panel: #181b21;  
+      --color-panel-alt: #23272e;  
+      --color-card: #353c48;  
+      --color-cell: #353c48;  
+      --color-border: #23272e;  
+      --color-accent: #6488f0;  
+      --color-text-main: #fcfcfc;  
+      --color-text-sub: #b9c6d3;  
+      --color-link: #8cb3fc;  
+      --color-link-hover: #5476ac;  
+    }  
+    html[data-theme='light'] {  
+      --color-bg: #f6f7f9;  
+      --color-panel: #f0f1f5;  
+      --color-panel-alt: #e4eaf2;  
+      --color-card: #eaf1fa;  
+      --color-cell: #eaf1fa;  
+      --color-border: #bdd1e5;  
+      --color-accent: #20539f;  
+      --color-text-main: #20222a;  
+      --color-text-sub: #384049;  
+      --color-link: #1951a5;  
+      --color-link-hover: #11336b;  
+    }  
+    html, body {  
+      height: 100%;  
+      width: 100%;  
+      margin: 0;  
+      padding: 0;  
+      overflow: hidden;  
+      background: var(--color-bg);  
+      color: var(--color-text-main);  
+      font-family: system-ui, sans-serif;  
+      overscroll-behavior: none;  
+      transition: background 0.2s, color 0.2s;  
+    }  
+    body, .main-wrapper {  
+      height: 100dvh;  
+      width: 100vw;  
+      min-height: 100dvh;  
+      min-width: 100vw;  
+      box-sizing: border-box;  
+      display: flex;  
+      flex-direction: column;  
+    }  
+    .main-wrapper {  
+      flex: 1 1 auto;  
+      display: flex;  
+      flex-direction: column;  
+      min-height: 0;  
+      min-width: 0;  
+      height: 100dvh;  
+      width: 100vw;  
+    }  
+    .top-panel, .bottom-panel {  
+      background: var(--color-panel);  
+      color: var(--color-text-main);  
+      display: flex;  
+      align-items: center;  
+      justify-content: center;  
+      flex-shrink: 0;  
+      z-index: 1;  
+      border-radius: 0;  
+      box-sizing: border-box;  
+      transition: background 0.2s, color 0.2s;  
+    }  
+    .top-panel {  
+      min-height: 48px;  
+      padding: 12px 0 12px env(safe-area-inset-left,0), 12px 0 12px env(safe-area-inset-right,0);  
+      border-top-left-radius: 0.7rem;  
+      border-top-right-radius: 0.7rem;  
+      margin-bottom: 0;  
+    }  
+    .bottom-panel {  
+      min-height: 90px;  
+      padding: 12px 0 env(safe-area-inset-bottom, 0) 0;  
+      border-bottom-left-radius: 0.7rem;  
+      border-bottom-right-radius: 0.7rem;  
+      margin-top: 0;  
+    }  
+    .theme-toggle {  
+      margin-left: 1rem;  
+      padding: 4px 16px;  
+      border-radius: 6px;  
+      border: none;  
+      font-size: 1rem;  
+      cursor: pointer;  
+      color: var(--color-text-main);  
+      background: var(--color-panel-alt);  
+      box-shadow: 0 2px 12px #0002;  
+      transition: background 0.2s, color 0.2s;  
+    }  
+    .theme-toggle:active {  
+      background: var(--color-accent);  
+      color: #fff;  
+    }  
+    .game-field-container {  
+      flex: 1 1 auto;  
+      display: flex;  
+      align-items: center;  
+      justify-content: center;  
+      min-height: 0;  
+      min-width: 0;  
+      position: relative;  
+    }  
+    canvas {  
+      display: block;  
+      background: var(--color-card);  
+      box-shadow: 0 2px 12px #0008;  
+      touch-action: manipulation;  
+      border-radius: 8px;  
+      margin: 0 auto;  
+      max-width: 92vw;  
+      max-height: 70vh;  
+      width: 100%;  
+      height: auto;  
+      box-sizing: border-box;  
+      transition: background 0.2s;  
+    }  
+    a {  
+      color: var(--color-link);  
+      text-decoration: underline;  
+      transition: color 0.2s;  
+    }  
+    a:hover, a:focus {  
+      color: var(--color-link-hover);  
+      filter: brightness(0.85);  
+    }  
+    .footer-dev {  
+      position: fixed;  
+      right: 2vw;  
+      bottom: 2vh;  
+      z-index: 4020;  
+      display: flex;  
+      align-items: center;  
+      gap: 0.55em;  
+      font-weight: 700;  
+      font-size: 1.04em;  
+      padding: 11px 24px 11px 17px;  
+      border-radius: 999px;  
+      box-shadow: 0 6px 32px #0001,0 2px 8px #0003;  
+      cursor: pointer;  
+      user-select: none;  
+      border: none;  
+      outline: none;  
+      letter-spacing: .09em;  
+      transition: background 0.2s, color 0.2s, box-shadow 0.22s, transform 0.1s;  
+      background: var(--dev-btn-bg, #23272e);  
+      color: var(--dev-btn-color, #fff);  
+    }  
+    .footer-dev__icon {   
+      display: flex; align-items: center; filter: drop-shadow(0 6px 12px #0001);   
+    }  
+    .footer-dev:active,  
+    .footer-dev:focus {  
+      box-shadow: 0 3px 9px #23272e44,0 1px 3px #0002;  
+      outline: 2px solid var(--color-accent, #6488f0);  
+      transform: scale(0.98);  
+    }  
+    .footer-dev:hover,  
+    .footer-dev:focus {  
+      background: var(--dev-btn-bg-hover,#353c48);  
+      color: var(--dev-btn-color-hover,#a2c4fd);  
+    }  
+    html[data-theme='light'] .footer-dev {  
+      --dev-btn-bg: #222d3b;  
+      --dev-btn-color: #fafbfe;  
+      --dev-btn-bg-hover: #dddfe6;  
+      --dev-btn-color-hover: #20539f;  
+      border: 1.2px solid #c6d1da;  
+      background: var(--dev-btn-bg);  
+      color: var(--dev-btn-color);  
+    }  
+    html[data-theme='dark'] .footer-dev,  
+    html:not([data-theme]) .footer-dev {  
+      --dev-btn-bg: #fff;  
+      --dev-btn-color: #233f65;  
+      --dev-btn-bg-hover: #38425b;  
+      --dev-btn-color-hover: #6fafeb;  
+      border: 1.2px solid #e6e8ea11;  
+      background: var(--dev-btn-bg);  
+      color: var(--dev-btn-color);  
+    }  
+    @media (max-width: 650px) {  
+      .footer-dev {   
+        right: 5vw;   
+        padding: 8px 14px 8px 11px;   
+        font-size: 0.99em;   
+        bottom: 3vh;  
+      }  
+      .footer-dev__text { letter-spacing: 0.08em; }  
+    }  
+    @media (orientation: landscape) and (min-width: 1025px) {  
+      body, .main-wrapper { flex-direction: column; }  
+      .main-wrapper { flex-direction: column; align-items: stretch; }  
+      .top-panel, .bottom-panel {  
+        min-width: 0; width: 100%; min-height: 48px; height: auto; max-width: 100%;  
+        flex-direction: row; justify-content: center; align-items: center;  
+        writing-mode: initial; border-radius: 0; margin: 0; padding: 12px 0;  
+      }  
+      .game-field-container {  
+        flex: 1 1 auto; min-height: 0; min-width: 0; max-height: 92vh;  
+        align-items: center; justify-content: center;  
+      }  
+      canvas {  
+        max-width: 60vh;  
+        max-height: 80vh;  
+        margin: 0 auto;  
+        border-radius: 8px;  
+      }  
+    }  
+    @media (orientation: landscape) and (max-width: 1024px) {  
+      body, .main-wrapper { flex-direction: row; }  
+      .main-wrapper { flex-direction: row; align-items: stretch; }  
+      .top-panel, .bottom-panel {  
+        width: 56px; min-width: 56px; max-width: 22vw; min-height: 0; height: auto;  
+        flex-direction: column; justify-content: center; align-items: center;  
+        z-index: 1; border-radius: 0.7rem;  
+      }  
+      .top-panel {  
+        writing-mode: vertical-lr;  
+        border-top-left-radius: 0.7rem;  
+        border-bottom-left-radius: 0.7rem;  
+        border-top-right-radius: 0;  
+        border-bottom-right-radius: 0;  
+        margin: 0;  
+        padding: env(safe-area-inset-top,0) 0 0 env(safe-area-inset-left,0);  
+      }  
+      .bottom-panel {  
+        writing-mode: vertical-lr;  
+        border-top-right-radius: 0.7rem;  
+        border-bottom-right-radius: 0.7rem;  
+        border-top-left-radius: 0;  
+        border-bottom-left-radius: 0;  
+        margin: 0;  
+        padding: 0 0 0 env(safe-area-inset-right,0);  
+      }  
+      .game-field-container {  
+        flex: 1 1 auto; min-height: 0; min-width: 0; max-height: 92vh;  
+        align-items: center; justify-content: center;  
+      }  
+      canvas {  
+        max-height: 92vh; max-width: 70vw; margin: 0 auto;  
+      }  
+    }  
+  </style>  
+</head>  
+<body>  
+<div class="main-wrapper">  
+  <div class="top-panel">  
+    Инфо-панель  
+    <button class="theme-toggle" id="themeToggle" title="Сменить тему">🌗</button>  
+  </div>  
+  <div class="game-field-container">  
+    <canvas id="game-canvas"></canvas>  
+  </div>  
+  <div class="bottom-panel">  
+    Навигация/кнопки v1.1.1  
+  </div>  
+</div>  
 
-    .game-field-container {
-      flex: 1 1 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 0;
-      min-width: 0;
-      position: relative;
-    }
-    canvas {
-      display: block;
-      background: var(--color-card);
-      box-shadow: 0 2px 12px #0008;
-      touch-action: manipulation;
-      border-radius: 8px;
-      margin: 0 auto;
-      max-width: 92vw;
-      max-height: 70vh;
-      width: 100%;
-      height: auto;
-      box-sizing: border-box;
-      transition: background 0.2s;
-    }
-    a {
-      color: var(--color-link);
-      text-decoration: underline;
-      transition: color 0.2s;
-    }
-    a:hover, a:focus {
-      color: var(--color-link-hover);
-      filter: brightness(0.85);
-    }
+<!-- Кнопка DEV -->  
+<div class="footer-dev" id="footerDevBtn" tabindex="0" title="Change-log">  
+  <span class="footer-dev__icon" aria-hidden="true">  
+    <svg width="1.15em" height="1.15em" viewBox="0 0 20 20" fill="none">  
+      <path d="M14.4 2.1l3.5 3.5c.5.5.5 1.3 0 1.7l-2.9 2.9c.1.8-.1 1.6-.7 2.2L7 17l-2 2-2-2 2-2 6.6-6.6c.6-.6 1.4-.8 2.2-.7l2.9-2.9c.5-.5 1.3-.5 1.8 0z" fill="currentColor"/>  
+    </svg>  
+  </span>  
+  <span class="footer-dev__text">DEV</span>  
+</div>  
 
-    /* --- FOOTER DEV-BTN --- */
-    .footer-dev {
-      position: fixed;
-      right: 2vw;
-      bottom: 2vh;
-      z-index: 4020;
-      display: flex;
-      align-items: center;
-      gap: 0.55em;
-      font-weight: 700;
-      font-size: 1.04em;
-      padding: 11px 24px 11px 17px;
-      border-radius: 999px;
-      box-shadow: 0 6px 32px #0001,0 2px 8px #0003;
-      cursor: pointer;
-      user-select: none;
-      border: none;
-      outline: none;
-      letter-spacing: .09em;
-      transition: background 0.2s, color 0.2s, box-shadow 0.22s, transform 0.1s;
-      background: var(--dev-btn-bg, #23272e);
-      color: var(--dev-btn-color, #fff);
-    }
-    .footer-dev__icon { 
-      display: flex; align-items: center; filter: drop-shadow(0 6px 12px #0001); 
-    }
-    .footer-dev:active,
-    .footer-dev:focus {
-      box-shadow: 0 3px 9px #23272e44,0 1px 3px #0002;
-      outline: 2px solid var(--color-accent, #6488f0);
-      transform: scale(0.98);
-    }
-    .footer-dev:hover,
-    .footer-dev:focus {
-      background: var(--dev-btn-bg-hover,#353c48);
-      color: var(--dev-btn-color-hover,#a2c4fd);
-    }
-    html[data-theme='light'] .footer-dev {
-      --dev-btn-bg: #222d3b;
-      --dev-btn-color: #fafbfe;
-      --dev-btn-bg-hover: #dddfe6;
-      --dev-btn-color-hover: #20539f;
-      border: 1.2px solid #c6d1da;
-      background: var(--dev-btn-bg);
-      color: var(--dev-btn-color);
-    }
-    html[data-theme='dark'] .footer-dev,
-    html:not([data-theme]) .footer-dev {
-      --dev-btn-bg: #fff;
-      --dev-btn-color: #233f65;
-      --dev-btn-bg-hover: #38425b;
-      --dev-btn-color-hover: #6fafeb;
-      border: 1.2px solid #e6e8ea11;
-      background: var(--dev-btn-bg);
-      color: var(--dev-btn-color);
-    }
-    @media (max-width: 650px) {
-      .footer-dev { 
-        right: 5vw; 
-        padding: 8px 14px 8px 11px; 
-        font-size: 0.99em; 
-        bottom: 3vh;
-      }
-      .footer-dev__text { letter-spacing: 0.08em; }
-    }
+<!-- Модалка changelog (динамически подгружается) -->  
+<div id="modal-changelog-root"></div>  
 
-    /* --- ПК и ноутбуки шире 1025 --- */
-    @media (orientation: landscape) and (min-width: 1025px) {
-      body, .main-wrapper {
-        flex-direction: column;
+<script>  
+  // Theme logic  
+  function setTheme(theme) {  
+    document.documentElement.setAttribute('data-theme', theme);  
+    localStorage.setItem('site-theme', theme);  
+  }  
+  function getPreferredTheme() {  
+    return localStorage.getItem('site-theme') ||  
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');  
+  }  
+  document.addEventListener('DOMContentLoaded', () => {  
+    setTheme(getPreferredTheme());  
+    const btn = document.getElementById('themeToggle');  
+    btn.addEventListener('click', () => {  
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';  
+      setTheme(isDark ? 'light' : 'dark');  
+    });  
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {  
+      if (!localStorage.getItem('site-theme')) setTheme(e.matches ? 'dark' : 'light');  
+    });  
+  });  
+
+  // Game logic  
+  const GRID_SIZE = 10;  
+  const canvas = document.getElementById('game-canvas');  
+  const ctx = canvas.getContext('2d');  
+  let selectedCell = null;  
+  function isLandscape() {  
+    return window.matchMedia("(orientation: landscape)").matches;  
+  }  
+  function getPanelsSize() {  
+    const topPanel = document.querySelector('.top-panel');  
+    const bottomPanel = document.querySelector('.bottom-panel');  
+    if (!isLandscape()) {  
+      return {  
+        main: (topPanel ? topPanel.getBoundingClientRect().height : 0)  
+            + (bottomPanel ? bottomPanel.getBoundingClientRect().height : 0)  
+      }  
+    } else {  
+      return {  
+        main: (topPanel ? topPanel.getBoundingClientRect().width : 0)  
+            + (bottomPanel ? bottomPanel.getBoundingClientRect().width : 0)  
+      }  
+    }  
+  }  
+  function getColors() {  
+    const root = getComputedStyle(document.documentElement);  
+    return {  
+      FIELD_BG: root.getPropertyValue('--color-card').trim(),  
+      CELL_BG: root.getPropertyValue('--color-cell').trim(),  
+      CELL_BORDER: root.getPropertyValue('--color-border').trim(),  
+      SELECT_BG: root.getPropertyValue('--color-accent').trim()  
+    }  
+  }  
+  function resizeCanvas() {  
+    const w = window.innerWidth;  
+    const h = window.innerHeight;  
+    const panels = getPanelsSize();  
+    const isLand = isLandscape();  
+    let maxSize;  
+    if (!isLand) {  
+      maxSize = Math.min(  
+        Math.floor(h - panels.main),  
+        Math.floor(w * 0.92)  
+      );  
+    } else {  
+      maxSize = Math.min(  
+        Math.floor(h * 0.92),  
+        Math.floor(w - panels.main)  
+      );  
+    }  
+    maxSize = Math.max(maxSize, 200);  
+    canvas.style.width = maxSize + 'px';  
+    canvas.style.height = maxSize + 'px';  
+    const dpr = window.devicePixelRatio || 1;  
+    canvas.width = maxSize * dpr;  
+    canvas.height = maxSize * dpr;  
+    ctx.setTransform(1, 0, 0, 1, 0, 0);  
+    ctx.scale(dpr, dpr);  
+    drawGrid();  
+  }  
+  function drawGrid() {  
+    const size = parseFloat(canvas.style.width) || 300;  
+    const cellSize = size / GRID_SIZE;  
+    const C = getColors();  
+    ctx.clearRect(0, 0, size, size);  
+    ctx.fillStyle = C.FIELD_BG;  
+    ctx.fillRect(0, 0, size, size);  
+    for (let row = 0; row < GRID_SIZE; row++) {  
+      for (let col = 0; col < GRID_SIZE; col++) {  
+        let x = col * cellSize;  
+        let y = row * cellSize;  
+        ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col ? C.SELECT_BG : C.CELL_BG;  
+        ctx.fillRect(x, y, cellSize, cellSize);  
+        ctx.strokeStyle = C.CELL_BORDER;  
+        ctx.lineWidth = 1.2;  
+        ctx.strokeRect(x, y, cellSize, cellSize);  
+      }  
+    }  
+  }  
+  function getCellByCoords(evt) {  
+    const rect = canvas.getBoundingClientRect();  
+    let clientX, clientY;  
+    if (evt.touches && evt.touches.length) {  
+      clientX = evt.touches[0].clientX;  
+      clientY = evt.touches[0].clientY;  
+    } else {  
+      clientX = evt.clientX;  
+      clientY = evt.clientY;  
+    }  
+    let x = clientX - rect.left;  
+    let y = clientY - rect.top;  
+    const cellSize = rect.width / GRID_SIZE;  
+    const col = Math.floor(x / cellSize);  
+    const row = Math.floor(y / cellSize);  
+    if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) {  
+      return null;  
+    }  
+    return { row, col };  
+  }  
+  function handleClick(evt) {  
+    const cell = getCellByCoords(evt);  
+    selectedCell = cell;  
+    drawGrid();  
+  }  
+  canvas.addEventListener('click', handleClick);  
+  canvas.addEventListener('touchstart', (evt) => {
+    evt.preventDefault();
+    handleClick(evt);
+  });
+
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+  const obs = new MutationObserver(() => drawGrid());
+  obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  setTimeout(resizeCanvas, 0);
+  setTimeout(resizeCanvas, 200);
+
+  // --- MODAL LOGIC BELOW ---
+
+  // Хелпер для проверки видимости модалки
+  function isModalVisible() {
+    const modal = document.querySelector('.modal-changelog');
+    return modal && modal.getAttribute('aria-hidden') === 'false';
+  }
+
+  // Открытие/закрытие модалки по кнопке DEV/клавише
+  async function showChangelogModal() {
+    const container = document.getElementById('modal-changelog-root');
+    let modal = container.querySelector('.modal-changelog');
+
+    if (modal && modal.getAttribute('aria-hidden') === 'false') {
+      // Если уже открыта — закрываем по повторному нажатию DEV
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      console.log('[MODAL] Закрытие по повторному нажатию DEV');
+      return;
+    }
+    // Если еще не загружали
+    if (!container.innerHTML) {
+      console.log('[MODAL] Загружаем changelog-modal.html ...');
+      const html = await fetch('changelog-modal.html').then(r=>r.text());
+      container.innerHTML = html;
+      // Инициализируем модалку!
+      if (window.initChangelogModal) window.initChangelogModal();
+      else setTimeout(() => window.initChangelogModal && window.initChangelogModal(), 50);
+    }
+    // Открываем модалку
+    setTimeout(() => {
+      const modal = container.querySelector('.modal-changelog');
+      if (modal) {
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        modal.focus();
+        console.log('[MODAL] Открытие модалки');
       }
-      .main-wrapper {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .top-panel, .bottom-panel {
-        min-width: 0;
-        width: 100%;
-        min-height: 48px;
-        height: auto;
-        max-width: 100%;
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-        writing-mode: initial;
-        border-radius: 0;
-        margin: 0;
-        padding: 12px 0;
-      }
-      .game-field-container {
-        flex: 1 1 auto;
-        min-height: 0;
-        min-width: 0;
-        max-height: 92vh;
-        align-items: center;
-        justify-content: center;
-      }
-      canvas {
-        max-width: 60vh;
-        max-height: 80vh;
-        margin: 0 auto;
-        border-radius: 8px;
+    }, 20);
+  }
+
+  document.getElementById('footerDevBtn').addEventListener('click', showChangelogModal);
+
+  // accessibility: запуск с клавиатуры
+  document.getElementById('footerDevBtn').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      showChangelogModal();
+    }
+  });
+
+  // Делаем, чтобы всегда было можно закрыть по Esc даже если фокус вне модалки (страховочно)
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isModalVisible()) {
+      const modal = document.querySelector('.modal-changelog');
+      if (modal) {
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        console.log('[MODAL] Закрытие по Escape (основной уровень)');
       }
     }
-    /* --- Мобильная и планшетная альбомная ( landscape, до 1024px) --- */
-    @media (orientation: landscape) and (max-width: 1024px) {
-      body, .main-wrapper {
-        flex-direction: row;
-      }
-      .main-wrapper {
-        flex-direction: row;
-        align-items: stretch;
-      }
-      .top-panel, .bottom-panel {
-        width: 56px;
-        min-width: 56px;
-        max-width: 22vw;
-        min-height: 0;
-        height: auto;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 1;
-        border-radius: 0.7rem;
-      }
-      .top-panel {
-        writing-mode: vertical-lr;
-        border-top-left-radius: 0.7rem;
-        border-bottom-left-radius: 0.7rem;
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-        margin: 0;
-        padding: env(safe-area-inset-top,0) 0 0 env(safe-area-inset-left,0);
-      }
-      .bottom-panel {
-        writing-mode: vertical-lr;
-        border-top-right-radius: 0.7rem;
-        border-bottom-right-radius: 0.7rem;
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-        margin: 0;
-        padding: 0 0 0 env(safe-area-inset-right,0);
-      }
-      .game-field-container {
-        flex: 1 1 auto;
-        min-height: 0;
-        min-width: 0;
-        max-height: 92vh;
-        align-items: center;
-        justify-content: center;
-      }
-      canvas {
-        max-height: 92vh;
-        max-width: 70vw;
-        margin: 0 auto;
-      }
+  });
+
+  // Переопределяем/добавляем функцию инициализации модалки: она логирует события и не дублирует слушатели
+  window.initChangelogModal = function() {
+    const modal = document.getElementById('modalChangelog');
+    if (!modal || modal.getAttribute('data-inited')) return;
+    modal.setAttribute('data-inited', '1');
+    console.log('[MODAL] Инициализация слушателей');
+
+    const closeBtn = document.getElementById('closeChangelog');
+    function closeModalBy(reason) {
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      console.log(`[MODAL] Закрытие по: ${reason}`);
     }
-  </style>
-</head>
-<body>
-  <div class="main-wrapper">
-    <div class="top-panel">
-      Инфо-панель
-      <button class="theme-toggle" id="themeToggle" title="Сменить тему">🌗</button>
-    </div>
-    <div class="game-field-container">
-      <canvas id="game-canvas"></canvas>
-    </div>
-    <div class="bottom-panel">
-      Навигация/кнопки v1.1.1
-    </div>
-  </div>
-
-  <!-- Кнопка DEV -->
-  <div class="footer-dev" id="footerDevBtn" tabindex="0" title="Change-log">
-    <span class="footer-dev__icon" aria-hidden="true">
-      <!-- Ракета SVG, пасхалка -->
-      <svg width="1.15em" height="1.15em" viewBox="0 0 20 20" fill="none">
-        <path d="M14.4 2.1l3.5 3.5c.5.5.5 1.3 0 1.7l-2.9 2.9c.1.8-.1 1.6-.7 2.2L7 17l-2 2-2-2 2-2 6.6-6.6c.6-.6 1.4-.8 2.2-.7l2.9-2.9c.5-.5 1.3-.5 1.8 0z" fill="currentColor"/>
-      </svg>
-    </span>
-    <span class="footer-dev__text">DEV</span>
-  </div>
-
-  <!-- Модалка changelog (динамически подгружается) -->
-  <div id="modal-changelog-root"></div>
-
-  <script>
-    // Theme logic
-    function setTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('site-theme', theme);
-    }
-    function getPreferredTheme() {
-      return localStorage.getItem('site-theme') ||
-        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      setTheme(getPreferredTheme());
-
-      // Theme toggle button
-      const btn = document.getElementById('themeToggle');
-      btn.addEventListener('click', () => {
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        setTheme(isDark ? 'light' : 'dark');
+    closeBtn.onclick = () => closeModalBy('кнопка СПАСИБО ЗА ВНИМАНИЕ');
+    // Клик вне окна
+    modal.addEventListener('mousedown', function(e){
+      if (e.target === modal) closeModalBy('клик по фону');
+    });
+    // ESC внутри модалки
+    modal.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closeModalBy('Escape (внутри модалки)');
+    });
+    // Навигация по якорям
+    modal.querySelectorAll('.changelog-nav-link').forEach(link => {
+      link.addEventListener('click', function(e){
+        e.preventDefault();
+        const tgt = document.querySelector(this.hash);
+        if (tgt) tgt.scrollIntoView({behavior:'smooth', block:'start'});
+        console.log('[MODAL] Переход по якорю: ' + this.hash);
       });
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-        if (!localStorage.getItem('site-theme')) setTheme(e.matches ? 'dark' : 'light');
-      });
     });
-
-    // Game logic (сетка)
-    const GRID_SIZE = 10;
-    const canvas = document.getElementById('game-canvas');
-    const ctx = canvas.getContext('2d');
-    let selectedCell = null;
-    function isLandscape() {
-      return window.matchMedia("(orientation: landscape)").matches;
-    }
-    function getPanelsSize() {
-      const topPanel = document.querySelector('.top-panel');
-      const bottomPanel = document.querySelector('.bottom-panel');
-      if (!isLandscape()) {
-        return {
-          main: (topPanel ? topPanel.getBoundingClientRect().height : 0)
-              + (bottomPanel ? bottomPanel.getBoundingClientRect().height : 0)
-        }
-      } else {
-        return {
-          main: (topPanel ? topPanel.getBoundingClientRect().width : 0)
-              + (bottomPanel ? bottomPanel.getBoundingClientRect().width : 0)
-        }
-      }
-    }
-    function getColors() {
-      const root = getComputedStyle(document.documentElement);
-      return {
-        FIELD_BG: root.getPropertyValue('--color-card').trim(),
-        CELL_BG: root.getPropertyValue('--color-cell').trim(),
-        CELL_BORDER: root.getPropertyValue('--color-border').trim(),
-        SELECT_BG: root.getPropertyValue('--color-accent').trim()
-      }
-    }
-    function resizeCanvas() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const panels = getPanelsSize();
-      const isLand = isLandscape();
-      let maxSize;
-      if (!isLand) {
-        maxSize = Math.min(
-          Math.floor(h - panels.main),
-          Math.floor(w * 0.92)
-        );
-      } else {
-        maxSize = Math.min(
-          Math.floor(h * 0.92),
-          Math.floor(w - panels.main)
-        );
-      }
-      maxSize = Math.max(maxSize, 200);
-      canvas.style.width = maxSize + 'px';
-      canvas.style.height = maxSize + 'px';
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = maxSize * dpr;
-      canvas.height = maxSize * dpr;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
-      drawGrid();
-    }
-    function drawGrid() {
-      const size = parseFloat(canvas.style.width) || 300;
-      const cellSize = size / GRID_SIZE;
-      const C = getColors();
-      ctx.clearRect(0, 0, size, size);
-      ctx.fillStyle = C.FIELD_BG;
-      ctx.fillRect(0, 0, size, size);
-      for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
-          let x = col * cellSize;
-          let y = row * cellSize;
-          ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col ? C.SELECT_BG : C.CELL_BG;
-          ctx.fillRect(x, y, cellSize, cellSize);
-          ctx.strokeStyle = C.CELL_BORDER;
-          ctx.lineWidth = 1.2;
-          ctx.strokeRect(x, y, cellSize, cellSize);
-        }
-      }
-    }
-    function getCellByCoords(evt) {
-      const rect = canvas.getBoundingClientRect();
-      let clientX, clientY;
-      if (evt.touches && evt.touches.length) {
-        clientX = evt.touches[0].clientX;
-        clientY = evt.touches[0].clientY;
-      } else {
-        clientX = evt.clientX;
-        clientY = evt.clientY;
-      }
-      let x = clientX - rect.left;
-      let y = clientY - rect.top;
-      const cellSize = rect.width / GRID_SIZE;
-      const col = Math.floor(x / cellSize);
-      const row = Math.floor(y / cellSize);
-      if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) {
-        return null;
-      }
-      return { row, col };
-    }
-    function handleClick(evt) {
-      const cell = getCellByCoords(evt);
-      selectedCell = cell;
-      drawGrid();
-    }
-    canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', (evt) => {
-      evt.preventDefault();
-      handleClick(evt);
-    });
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
-    const obs = new MutationObserver(() => drawGrid());
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    setTimeout(resizeCanvas, 0);
-    setTimeout(resizeCanvas, 200);
-
-    // --- DYNAMIC MODAL LOADING + DEV BTN ---
-    async function showChangelogModal() {
-      const container = document.getElementById('modal-changelog-root');
-      if (!container.innerHTML) {
-        // Загружаем changelog-modal.html однократно
-        const html = await fetch('changelog-modal.html').then(r=>r.text());
-        container.innerHTML = html;
-        // Дожидаемся и инициализируем модалку
-        if (window.initChangelogModal) window.initChangelogModal();
-        else { setTimeout(()=>window.initChangelogModal && window.initChangelogModal(), 50);}
-      }
-      setTimeout(()=>{
-        const modal = container.querySelector('.modal-changelog');
-        if (modal) {
-          modal.setAttribute('aria-hidden', 'false');
-          document.body.style.overflow = 'hidden';
-          modal.focus();
-        }
-      },10);
-    }
-    document.getElementById('footerDevBtn').addEventListener('click', showChangelogModal);
-    // accessibility: запуск с клавиатуры
-    document.getElementById('footerDevBtn').addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showChangelogModal();}
-    });
-  </script>
+    setTimeout(() => modal.focus(), 20);
+  };
+</script>
 </body>
 </html>
