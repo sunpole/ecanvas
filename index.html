@@ -14,10 +14,6 @@
       flex-direction: column;
       min-height: 100vh;
     }
-    #branch-banner {
-      /* Оформление баннера по умолчанию (может переопределяться в JS) */
-      display: none;
-    }
     .top-panel, .bottom-panel {
       min-height: 48px;
       padding: 12px;
@@ -43,45 +39,11 @@
   </style>
 </head>
 <body>
-  <!-- Баннер ветки (для индикации ветки dev, feature и др.) -->
-  <div id="branch-banner"></div>
   <div class="top-panel">Инфо-панель</div>
   <div class="game-field-container">
     <canvas id="game-canvas"></canvas>
   </div>
   <div class="bottom-panel">Навигация/кнопки</div>
-  <script>
-    // ---- Здесь указывай актуальную ветку! ----
-    const BRANCH = 'dev'; // или 'main', 'feature-xxx', и т.д.
-
-    // Оформление и баннер ветки
-    window.addEventListener('DOMContentLoaded', () => {
-      const banner = document.getElementById('branch-banner');
-      if (BRANCH !== 'main') { // main обычно не отмечаем
-        banner.textContent = `Ветка: ${BRANCH}`;
-        banner.style.background = 'orange';
-        banner.style.color = 'black';
-        banner.style.padding = '6px';
-        banner.style.textAlign = 'center';
-        banner.style.fontWeight = 'bold';
-        banner.style.position = 'sticky';
-        banner.style.top = 0;
-        banner.style.zIndex = 1000;
-        banner.style.display = 'block';
-        // Можно поставить разные цвета по ветке:
-        if (BRANCH === 'dev') {
-          document.body.style.background = '#222831';
-          banner.style.background = '#ffbe3b';
-        } else if (BRANCH.startsWith('feature')) {
-          document.body.style.background = '#335';
-          banner.style.background = 'lightblue';
-        }
-      } else {
-        // Для main — стандартный фон
-        document.body.style.background = '#23272e';
-      }
-    });
-  </script>
   <script>
     // === НАСТРОЙКИ СЕТКИ ===
     const GRID_SIZE = 10; // Измени это число — и будет другая сетка N x N!
