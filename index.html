@@ -227,8 +227,8 @@
     align-items: center; justify-content: center;
   }
   canvas {
-    max-width: 90vh;
-    max-height: 88vh;
+    max-width: 98vw !important;
+    max-height: 96vh !important;
     margin: 0 auto;
     border-radius: 8px;
   }
@@ -280,7 +280,7 @@
     <canvas id="game-canvas"></canvas>  
   </div>  
   <div class="bottom-panel">  
-    Навигация/кнопки v1.1.3 
+    Навигация/кнопки v1.1.4
   </div>  
 </div>  
 
@@ -374,33 +374,39 @@ window.addEventListener('orientationchange', updateMediaIndicator);
       SELECT_BG: root.getPropertyValue('--color-accent').trim()  
     }  
   }  
-  function resizeCanvas() {  
-    const w = window.innerWidth;  
-    const h = window.innerHeight;  
-    const panels = getPanelsSize();  
-    const isLand = isLandscape();  
-    let maxSize;  
-    if (!isLand) {  
-      maxSize = Math.min(  
-        Math.floor(h - panels.main),  
-        Math.floor(w * 0.92)  
-      );  
-    } else {  
-      maxSize = Math.min(  
-        Math.floor(h * 0.92),  
-        Math.floor(w - panels.main)  
-      );  
-    }  
-    maxSize = Math.max(maxSize, 200);  
-    canvas.style.width = maxSize + 'px';  
-    canvas.style.height = maxSize + 'px';  
-    const dpr = window.devicePixelRatio || 1;  
-    canvas.width = maxSize * dpr;  
-    canvas.height = maxSize * dpr;  
-    ctx.setTransform(1, 0, 0, 1, 0, 0);  
-    ctx.scale(dpr, dpr);  
-    drawGrid();  
-  }  
+  
+  function resizeCanvas() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const panels = getPanelsSize();
+  const isLand = isLandscape();
+  let maxSize;
+
+  if (!isLand) {
+    // Портрет — используем почти всю ширину и высоту
+    maxSize = Math.min(
+      Math.floor(h - panels.main - 40), // чуть меньше, чтобы не прилипать
+      Math.floor(w * 0.96)
+    );
+  } else {
+    // Альбом — больше высота
+    maxSize = Math.min(
+      Math.floor(h * 0.96),
+      Math.floor(w - panels.main - 40) // чуть-чуть запас по ширине
+    );
+  }
+  maxSize = Math.max(maxSize, 420); // ставим значение БОЛЬШЕ минимального
+
+  canvas.style.width = maxSize + 'px';
+  canvas.style.height = maxSize + 'px';
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = maxSize * dpr;
+  canvas.height = maxSize * dpr;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+  drawGrid();
+}
+  
   function drawGrid() {  
     const size = parseFloat(canvas.style.width) || 300;  
     const cellSize = size / GRID_SIZE;  
