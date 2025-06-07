@@ -5,14 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <title>Game Grid Test</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       background: #23272e;
       color: #fff;
       font-family: sans-serif;
+      height: 100%;
+      width: 100%;
+    }
+    body {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      height: 100vh;
     }
     .top-panel, .bottom-panel {
       min-height: 48px;
@@ -33,8 +39,11 @@
       display: block;
       background: #353c48;
       box-shadow: 0 2px 12px #0008;
-      touch-action: none;
+      touch-action: manipulation;
       border-radius: 8px;
+      /* Принудительно убираем артефакты на мобилках */
+      max-width: 98vw;
+      max-height: 98vw;
     }
   </style>
 </head>
@@ -46,7 +55,7 @@
   <div class="bottom-panel">Навигация/кнопки</div>
   <script>
     // === НАСТРОЙКИ СЕТКИ ===
-    const GRID_SIZE = 10; // Измени это число — и будет другая сетка N x N!
+    const GRID_SIZE = 10;
 
     // Цвета:
     const FIELD_BG = "#353c48";
@@ -58,30 +67,51 @@
     const ctx = canvas.getContext('2d');
     let selectedCell = null;
 
+    // --- Логгирование ---
+    function log(...args) {
+      if (window && window.console) console.log(...args);
+    }
+
+    // --- Адаптивный сайзинг ---
     function resizeCanvas() {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      const panelSpace = 120;
-      let size;
-      if (w > h) {
-        size = Math.floor((h - panelSpace) * 0.85);
-      } else {
-        size = Math.floor(w * 0.85);
-      }
+      // Учитываем панели сверху и снизу (2*48+2*12)
+      const panelSpace = 2 * (48 + 12);
+
+      // Канвас - квадрат, максимально возможный по меньшей стороне
+      let size = Math.min(
+        Math.floor((h - panelSpace) * 0.98), // почти вся высота кроме панелей
+        Math.floor(w * 0.98)                 // почти вся ширина
+      );
+
+      // Важно на всякий случай: минимально 200px (можно меньше если надо)
+      size = Math.max(size, 200);
+
+      // Ставим визуальный размер
       canvas.style.width = size + 'px';
       canvas.style.height = size + 'px';
+
+      // Для retina - логический размер выше
       const dpr = window.devicePixelRatio || 1;
       canvas.width = size * dpr;
       canvas.height = size * dpr;
-      ctx.setTransform(dpr,0,0,dpr,0,0);
+      // Применяем трансформацию для учета dpr:
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(dpr, dpr);
+
+      log("[resizeCanvas]", { w, h, size, dpr, canvasCssWidth: canvas.style.width, canvasWidth: canvas.width });
+
       drawGrid();
     }
 
+    // --- Рисуем сетку ---
     function drawGrid() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const w = canvas.width;
-      const h = canvas.height;
-      const cellSize = w / GRID_SIZE;
+      // size в css-пикселях (так же, как canvas.style.width/height)
+      const size = parseFloat(canvas.style.width) || 300;
+      ctx.clearRect(0, 0, size, size);
+      const cellSize = size / GRID_SIZE;
+
       for (let row = 0; row < GRID_SIZE; row++) {
         for (let col = 0; col < GRID_SIZE; col++) {
           let x = col * cellSize;
@@ -95,6 +125,7 @@
       }
     }
 
+    // --- Клик и тач - координаты в CSS-пикселях ---
     function getCellByCoords(evt) {
       const rect = canvas.getBoundingClientRect();
       let clientX, clientY;
@@ -105,28 +136,52 @@
         clientX = evt.clientX;
         clientY = evt.clientY;
       }
-      let x = (clientX - rect.left) * (canvas.width / rect.width);
-      let y = (clientY - rect.top) * (canvas.height / rect.height);
-      const cellSize = canvas.width / GRID_SIZE;
+      // Без всяких переводов: работаем только с css-пикселями
+      let x = clientX - rect.left;
+      let y = clientY - rect.top;
+      const cellSize = rect.width / GRID_SIZE;
+
+      // ПРОВЕРКА-где нажали в логах:
+      log(
+        "[getCellByCoords]",
+        { clientX, clientY, rect: {...rect}, x, y, cellSize }
+      );
+
       const col = Math.floor(x / cellSize);
       const row = Math.floor(y / cellSize);
-      if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) return null;
+
+      // Для отладки:
+      if (
+        col < 0 || row < 0 ||
+        col >= GRID_SIZE || row >= GRID_SIZE
+      ) {
+        log("Клик вне сетки!", { row, col, x, y });
+        return null;
+      }
+
+      log("Определена ячейка", { row, col });
       return {row, col};
     }
 
-    canvas.addEventListener('click', (evt) => {
-      selectedCell = getCellByCoords(evt);
+    function handleClick(evt) {
+      const cell = getCellByCoords(evt);
+      selectedCell = cell;
       drawGrid();
-    });
+      if (cell) {
+        log(`Выбрана клетка: [${cell.row}, ${cell.col}]`);
+      }
+    }
+
+    canvas.addEventListener('click', handleClick);
 
     canvas.addEventListener('touchstart', (evt) => {
       evt.preventDefault();
-      selectedCell = getCellByCoords(evt);
-      drawGrid();
+      handleClick(evt);
     });
 
     window.addEventListener('resize', resizeCanvas);
 
+    // --- Инициализация ---
     resizeCanvas();
   </script>
 </body>
