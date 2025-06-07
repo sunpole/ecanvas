@@ -62,7 +62,6 @@
       height: 100dvh;
       width: 100vw;
     }
-
     .top-panel, .bottom-panel {
       background: var(--color-panel);
       color: var(--color-text-main);
@@ -122,13 +121,12 @@
       touch-action: manipulation;
       border-radius: 8px;
       margin: 0 auto;
-      max-width: 92vw;     /* безопасно! */
+      max-width: 92vw;
       max-height: 70vh;
       width: 100%;
       height: auto;
       box-sizing: border-box;
       transition: background 0.2s;
-      /* на максимальную доступную высоту */
     }
     a {
       color: var(--color-link);
@@ -138,6 +136,72 @@
     a:hover, a:focus {
       color: var(--color-link-hover);
       filter: brightness(0.85);
+    }
+
+    /* --- FOOTER DEV-BTN --- */
+    .footer-dev {
+      position: fixed;
+      right: 2vw;
+      bottom: 2vh;
+      z-index: 4020;
+      display: flex;
+      align-items: center;
+      gap: 0.55em;
+      font-weight: 700;
+      font-size: 1.04em;
+      padding: 11px 24px 11px 17px;
+      border-radius: 999px;
+      box-shadow: 0 6px 32px #0001,0 2px 8px #0003;
+      cursor: pointer;
+      user-select: none;
+      border: none;
+      outline: none;
+      letter-spacing: .09em;
+      transition: background 0.2s, color 0.2s, box-shadow 0.22s, transform 0.1s;
+      background: var(--dev-btn-bg, #23272e);
+      color: var(--dev-btn-color, #fff);
+    }
+    .footer-dev__icon { 
+      display: flex; align-items: center; filter: drop-shadow(0 6px 12px #0001); 
+    }
+    .footer-dev:active,
+    .footer-dev:focus {
+      box-shadow: 0 3px 9px #23272e44,0 1px 3px #0002;
+      outline: 2px solid var(--color-accent, #6488f0);
+      transform: scale(0.98);
+    }
+    .footer-dev:hover,
+    .footer-dev:focus {
+      background: var(--dev-btn-bg-hover,#353c48);
+      color: var(--dev-btn-color-hover,#a2c4fd);
+    }
+    html[data-theme='light'] .footer-dev {
+      --dev-btn-bg: #222d3b;
+      --dev-btn-color: #fafbfe;
+      --dev-btn-bg-hover: #dddfe6;
+      --dev-btn-color-hover: #20539f;
+      border: 1.2px solid #c6d1da;
+      background: var(--dev-btn-bg);
+      color: var(--dev-btn-color);
+    }
+    html[data-theme='dark'] .footer-dev,
+    html:not([data-theme]) .footer-dev {
+      --dev-btn-bg: #fff;
+      --dev-btn-color: #233f65;
+      --dev-btn-bg-hover: #38425b;
+      --dev-btn-color-hover: #6fafeb;
+      border: 1.2px solid #e6e8ea11;
+      background: var(--dev-btn-bg);
+      color: var(--dev-btn-color);
+    }
+    @media (max-width: 650px) {
+      .footer-dev { 
+        right: 5vw; 
+        padding: 8px 14px 8px 11px; 
+        font-size: 0.99em; 
+        bottom: 3vh;
+      }
+      .footer-dev__text { letter-spacing: 0.08em; }
     }
 
     /* --- ПК и ноутбуки шире 1025 --- */
@@ -221,7 +285,7 @@
         flex: 1 1 auto;
         min-height: 0;
         min-width: 0;
-        max-height: 92vh;    /* безопасная зона! */
+        max-height: 92vh;
         align-items: center;
         justify-content: center;
       }
@@ -246,6 +310,21 @@
       Навигация/кнопки v1.1.1
     </div>
   </div>
+
+  <!-- Кнопка DEV -->
+  <div class="footer-dev" id="footerDevBtn" tabindex="0" title="Change-log">
+    <span class="footer-dev__icon" aria-hidden="true">
+      <!-- Ракета SVG, пасхалка -->
+      <svg width="1.15em" height="1.15em" viewBox="0 0 20 20" fill="none">
+        <path d="M14.4 2.1l3.5 3.5c.5.5.5 1.3 0 1.7l-2.9 2.9c.1.8-.1 1.6-.7 2.2L7 17l-2 2-2-2 2-2 6.6-6.6c.6-.6 1.4-.8 2.2-.7l2.9-2.9c.5-.5 1.3-.5 1.8 0z" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="footer-dev__text">DEV</span>
+  </div>
+
+  <!-- Модалка changelog (динамически подгружается) -->
+  <div id="modal-changelog-root"></div>
+
   <script>
     // Theme logic
     function setTheme(theme) {
@@ -257,32 +336,27 @@
         (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     }
     document.addEventListener('DOMContentLoaded', () => {
-      // Set theme on load
       setTheme(getPreferredTheme());
 
-      // Toggle handler
+      // Theme toggle button
       const btn = document.getElementById('themeToggle');
       btn.addEventListener('click', () => {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         setTheme(isDark ? 'light' : 'dark');
       });
-
-      // Auto-switch on OS theme
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         if (!localStorage.getItem('site-theme')) setTheme(e.matches ? 'dark' : 'light');
       });
     });
 
-    // Game logic
+    // Game logic (сетка)
     const GRID_SIZE = 10;
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
     let selectedCell = null;
-
     function isLandscape() {
       return window.matchMedia("(orientation: landscape)").matches;
     }
-
     function getPanelsSize() {
       const topPanel = document.querySelector('.top-panel');
       const bottomPanel = document.querySelector('.bottom-panel');
@@ -298,9 +372,7 @@
         }
       }
     }
-
     function getColors() {
-      // Для canvas-констант
       const root = getComputedStyle(document.documentElement);
       return {
         FIELD_BG: root.getPropertyValue('--color-card').trim(),
@@ -309,7 +381,6 @@
         SELECT_BG: root.getPropertyValue('--color-accent').trim()
       }
     }
-
     function resizeCanvas() {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -328,25 +399,20 @@
         );
       }
       maxSize = Math.max(maxSize, 200);
-
       canvas.style.width = maxSize + 'px';
       canvas.style.height = maxSize + 'px';
-
       const dpr = window.devicePixelRatio || 1;
       canvas.width = maxSize * dpr;
       canvas.height = maxSize * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
-
       drawGrid();
     }
-
     function drawGrid() {
       const size = parseFloat(canvas.style.width) || 300;
       const cellSize = size / GRID_SIZE;
       const C = getColors();
       ctx.clearRect(0, 0, size, size);
-      // фон сетки
       ctx.fillStyle = C.FIELD_BG;
       ctx.fillRect(0, 0, size, size);
       for (let row = 0; row < GRID_SIZE; row++) {
@@ -361,7 +427,6 @@
         }
       }
     }
-
     function getCellByCoords(evt) {
       const rect = canvas.getBoundingClientRect();
       let clientX, clientY;
@@ -375,38 +440,55 @@
       let x = clientX - rect.left;
       let y = clientY - rect.top;
       const cellSize = rect.width / GRID_SIZE;
-
       const col = Math.floor(x / cellSize);
       const row = Math.floor(y / cellSize);
-
       if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) {
         return null;
       }
       return { row, col };
     }
-
     function handleClick(evt) {
       const cell = getCellByCoords(evt);
       selectedCell = cell;
       drawGrid();
     }
-
     canvas.addEventListener('click', handleClick);
     canvas.addEventListener('touchstart', (evt) => {
       evt.preventDefault();
       handleClick(evt);
     });
-
-    // Resize logic
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
-
-    // Theme redraw on change
     const obs = new MutationObserver(() => drawGrid());
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
     setTimeout(resizeCanvas, 0);
     setTimeout(resizeCanvas, 200);
+
+    // --- DYNAMIC MODAL LOADING + DEV BTN ---
+    async function showChangelogModal() {
+      const container = document.getElementById('modal-changelog-root');
+      if (!container.innerHTML) {
+        // Загружаем changelog-modal.html однократно
+        const html = await fetch('changelog-modal.html').then(r=>r.text());
+        container.innerHTML = html;
+        // Дожидаемся и инициализируем модалку
+        if (window.initChangelogModal) window.initChangelogModal();
+        else { setTimeout(()=>window.initChangelogModal && window.initChangelogModal(), 50);}
+      }
+      setTimeout(()=>{
+        const modal = container.querySelector('.modal-changelog');
+        if (modal) {
+          modal.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+          modal.focus();
+        }
+      },10);
+    }
+    document.getElementById('footerDevBtn').addEventListener('click', showChangelogModal);
+    // accessibility: запуск с клавиатуры
+    document.getElementById('footerDevBtn').addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showChangelogModal();}
+    });
   </script>
 </body>
 </html>
