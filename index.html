@@ -5,16 +5,44 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <title>Game Grid Test</title>
   <style>
+    :root {
+      /* Темная тема (по умолчанию) */
+      --color-bg: #23272e;
+      --color-panel: #181b21;
+      --color-panel-alt: #23272e;
+      --color-card: #353c48;
+      --color-cell: #353c48;
+      --color-border: #23272e;
+      --color-accent: #6488f0;
+      --color-text-main: #fcfcfc;
+      --color-text-sub: #b9c6d3;
+      --color-link: #8cb3fc;
+      --color-link-hover: #5476ac;
+    }
+    html[data-theme='light'] {
+      --color-bg: #f6f7f9;
+      --color-panel: #f0f1f5;
+      --color-panel-alt: #e4eaf2;
+      --color-card: #eaf1fa;
+      --color-cell: #eaf1fa;
+      --color-border: #bdd1e5;
+      --color-accent: #20539f;
+      --color-text-main: #20222a;
+      --color-text-sub: #384049;
+      --color-link: #1951a5;
+      --color-link-hover: #11336b;
+    }
     html, body {
       height: 100%;
       width: 100%;
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #23272e;
-      color: #fff;
-      font-family: sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text-main);
+      font-family: system-ui, sans-serif;
       overscroll-behavior: none;
+      transition: background 0.2s, color 0.2s;
     }
     body, .main-wrapper {
       height: 100dvh;
@@ -35,9 +63,9 @@
       width: 100vw;
     }
 
-    .top-panel,
-    .bottom-panel {
-      background: #181b21;
+    .top-panel, .bottom-panel {
+      background: var(--color-panel);
+      color: var(--color-text-main);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -45,6 +73,7 @@
       z-index: 1;
       border-radius: 0;
       box-sizing: border-box;
+      transition: background 0.2s, color 0.2s;
     }
     .top-panel {
       min-height: 48px;
@@ -60,6 +89,22 @@
       border-bottom-right-radius: 0.7rem;
       margin-top: 0;
     }
+    .theme-toggle {
+      margin-left: 1rem;
+      padding: 4px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--color-text-main);
+      background: var(--color-panel-alt);
+      box-shadow: 0 2px 12px #0002;
+      transition: background 0.2s, color 0.2s;
+    }
+    .theme-toggle:active {
+      background: var(--color-accent);
+      color: #fff;
+    }
 
     .game-field-container {
       flex: 1 1 auto;
@@ -72,23 +117,68 @@
     }
     canvas {
       display: block;
-      background: #353c48;
+      background: var(--color-card);
       box-shadow: 0 2px 12px #0008;
       touch-action: manipulation;
       border-radius: 8px;
-      margin-left: auto;
-      margin-right: auto;
-      margin-top: 0;
-      margin-bottom: 0;
-      max-width: 92vw;     /* <-- безопасно! */
+      margin: 0 auto;
+      max-width: 92vw;     /* безопасно! */
       max-height: 70vh;
       width: 100%;
       height: auto;
       box-sizing: border-box;
+      transition: background 0.2s;
       /* на максимальную доступную высоту */
     }
+    a {
+      color: var(--color-link);
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+    a:hover, a:focus {
+      color: var(--color-link-hover);
+      filter: brightness(0.85);
+    }
 
-    /*==================== Альбомная (горизонтальная) ориентация ====================*/
+    /* --- ПК и ноутбуки шире 1025 --- */
+    @media (orientation: landscape) and (min-width: 1025px) {
+      body, .main-wrapper {
+        flex-direction: column;
+      }
+      .main-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .top-panel, .bottom-panel {
+        min-width: 0;
+        width: 100%;
+        min-height: 48px;
+        height: auto;
+        max-width: 100%;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        writing-mode: initial;
+        border-radius: 0;
+        margin: 0;
+        padding: 12px 0;
+      }
+      .game-field-container {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        max-height: 92vh;
+        align-items: center;
+        justify-content: center;
+      }
+      canvas {
+        max-width: 60vh;
+        max-height: 80vh;
+        margin: 0 auto;
+        border-radius: 8px;
+      }
+    }
+    /* --- Мобильная и планшетная альбомная ( landscape, до 1024px) --- */
     @media (orientation: landscape) and (max-width: 1024px) {
       body, .main-wrapper {
         flex-direction: row;
@@ -136,8 +226,8 @@
         justify-content: center;
       }
       canvas {
-        max-height: 92vh;   /* больше высоты, но всё равно не до края */
-        max-width: 70vw;    /* чтобы не занять весь горизонтальный экран */
+        max-height: 92vh;
+        max-width: 70vw;
         margin: 0 auto;
       }
     }
@@ -145,13 +235,45 @@
 </head>
 <body>
   <div class="main-wrapper">
-    <div class="top-panel">Инфо-панель</div>
+    <div class="top-panel">
+      Инфо-панель
+      <button class="theme-toggle" id="themeToggle" title="Сменить тему">🌗</button>
+    </div>
     <div class="game-field-container">
       <canvas id="game-canvas"></canvas>
     </div>
-    <div class="bottom-panel">Навигация/кнопки v1.1.0</div>
+    <div class="bottom-panel">
+      Навигация/кнопки v1.1.1
+    </div>
   </div>
   <script>
+    // Theme logic
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('site-theme', theme);
+    }
+    function getPreferredTheme() {
+      return localStorage.getItem('site-theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set theme on load
+      setTheme(getPreferredTheme());
+
+      // Toggle handler
+      const btn = document.getElementById('themeToggle');
+      btn.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        setTheme(isDark ? 'light' : 'dark');
+      });
+
+      // Auto-switch on OS theme
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!localStorage.getItem('site-theme')) setTheme(e.matches ? 'dark' : 'light');
+      });
+    });
+
+    // Game logic
     const GRID_SIZE = 10;
     const canvas = document.getElementById('game-canvas');
     const ctx = canvas.getContext('2d');
@@ -164,8 +286,6 @@
     function getPanelsSize() {
       const topPanel = document.querySelector('.top-panel');
       const bottomPanel = document.querySelector('.bottom-panel');
-      // в портретной ориентации: панели сверху и снизу
-      // в альбомной: панели слева и справа (как боковые бары)
       if (!isLandscape()) {
         return {
           main: (topPanel ? topPanel.getBoundingClientRect().height : 0)
@@ -179,30 +299,36 @@
       }
     }
 
+    function getColors() {
+      // Для canvas-констант
+      const root = getComputedStyle(document.documentElement);
+      return {
+        FIELD_BG: root.getPropertyValue('--color-card').trim(),
+        CELL_BG: root.getPropertyValue('--color-cell').trim(),
+        CELL_BORDER: root.getPropertyValue('--color-border').trim(),
+        SELECT_BG: root.getPropertyValue('--color-accent').trim()
+      }
+    }
+
     function resizeCanvas() {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const panels = getPanelsSize();
       const isLand = isLandscape();
-
-      // --- размеры canvas (адаптив!) ---
       let maxSize;
       if (!isLand) {
-        // портрет — ширина с запасом (не до краёв!)
         maxSize = Math.min(
           Math.floor(h - panels.main),
-          Math.floor(w * 0.92)  // 92vw, как в css, для безопасной зоны
+          Math.floor(w * 0.92)
         );
       } else {
-        // альбомная — высота (+ширина с запасом)
         maxSize = Math.min(
-          Math.floor(h * 0.92), // запас сверху/снизу
+          Math.floor(h * 0.92),
           Math.floor(w - panels.main)
         );
       }
       maxSize = Math.max(maxSize, 200);
 
-      // --- установка размера ---
       canvas.style.width = maxSize + 'px';
       canvas.style.height = maxSize + 'px';
 
@@ -218,15 +344,18 @@
     function drawGrid() {
       const size = parseFloat(canvas.style.width) || 300;
       const cellSize = size / GRID_SIZE;
-
+      const C = getColors();
       ctx.clearRect(0, 0, size, size);
+      // фон сетки
+      ctx.fillStyle = C.FIELD_BG;
+      ctx.fillRect(0, 0, size, size);
       for (let row = 0; row < GRID_SIZE; row++) {
         for (let col = 0; col < GRID_SIZE; col++) {
           let x = col * cellSize;
           let y = row * cellSize;
-          ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col ? "#6488f0" : "#353c48";
+          ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col ? C.SELECT_BG : C.CELL_BG;
           ctx.fillRect(x, y, cellSize, cellSize);
-          ctx.strokeStyle = "#23272e";
+          ctx.strokeStyle = C.CELL_BORDER;
           ctx.lineWidth = 1.2;
           ctx.strokeRect(x, y, cellSize, cellSize);
         }
@@ -268,11 +397,16 @@
       handleClick(evt);
     });
 
+    // Resize logic
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+
+    // Theme redraw on change
+    const obs = new MutationObserver(() => drawGrid());
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
     setTimeout(resizeCanvas, 0);
     setTimeout(resizeCanvas, 200);
-
   </script>
 </body>
 </html>
