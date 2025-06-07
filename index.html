@@ -8,34 +8,39 @@
     html, body {
       margin: 0;
       padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden; /* убираем прокрутку вообще */
       background: #23272e;
       color: #fff;
       font-family: sans-serif;
-      height: 100%;
-      width: 100%;
+      overscroll-behavior: none; /* убирает жёлый bounce-эффект на многих мобилах */
     }
     body {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
       height: 100vh;
+      box-sizing: border-box;
+      /* Защита от перескока на мобилках */
     }
     .top-panel {
       min-height: 48px;
-      padding: 12px;
+      padding: 12px 0;
       background: #181b21;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
     .bottom-panel {
-      min-height: 90px; /* стало больше */
-      padding: 12px;
+      min-height: 90px; /* место для магазина/навигации */
+      padding: 12px 0;
       background: #181b21;
       display: flex;
       align-items: center;
       justify-content: center;
-      /* Можно потом добавить стили для магазина */
+      flex-shrink: 0;
     }
     .game-field-container {
       flex: 1;
@@ -51,7 +56,7 @@
       touch-action: manipulation;
       border-radius: 8px;
       max-width: 98vw;
-      max-height: 98vw;
+      max-height: 98vh;
     }
   </style>
 </head>
@@ -60,7 +65,7 @@
   <div class="game-field-container">
     <canvas id="game-canvas"></canvas>
   </div>
-  <div class="bottom-panel">Навигация/кнопки v1.0.5</div>
+  <div class="bottom-panel">Навигация/кнопки v1.0.6</div>
   <script>
     const GRID_SIZE = 10;
     const FIELD_BG = "#353c48";
@@ -74,24 +79,27 @@
     function log(...args) { if (window && window.console) console.log(...args); }
 
     function resizeCanvas() {
+      // Используем 100% размера окна!
       const w = window.innerWidth;
       const h = window.innerHeight;
-      // Получаем высоту верхней и нижней панелей
+
+      // Точные размеры панелей
       const topPanel = document.querySelector('.top-panel');
       const bottomPanel = document.querySelector('.bottom-panel');
       const topH = topPanel ? topPanel.getBoundingClientRect().height : 0;
       const bottomH = bottomPanel ? bottomPanel.getBoundingClientRect().height : 0;
       const panelsHeight = topH + bottomH;
 
-      // Канвас - квадрат, максимально возможный по меньшей стороне
+      // Квадрат максимально возможный, но только в видимой зоне
       let size = Math.min(
-        Math.floor((h - panelsHeight) * 0.98), // высота с учетом панелей
+        Math.floor((h - panelsHeight)),
         Math.floor(w * 0.98)
       );
       size = Math.max(size, 200);
 
       canvas.style.width = size + 'px';
       canvas.style.height = size + 'px';
+
       const dpr = window.devicePixelRatio || 1;
       canvas.width = size * dpr;
       canvas.height = size * dpr;
