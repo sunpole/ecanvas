@@ -6,10 +6,10 @@
   <title>Game Grid Test</title>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
       height: 100%;
       width: 100%;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
       background: #23272e;
       color: #fff;
@@ -17,40 +17,50 @@
       overscroll-behavior: none;
     }
     body, .main-wrapper {
+      height: 100dvh;
+      width: 100vw;
+      min-height: 100dvh;
+      min-width: 100vw;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      min-height: 100dvh;
-      height: 100dvh;
-      width: 100vw;
-      box-sizing: border-box;
-      /* fallback для старых браузеров */
     }
     .main-wrapper {
-      flex: 1;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
       min-height: 0;
+      min-width: 0;
       height: 100dvh;
       width: 100vw;
+    }
+
+    .top-panel,
+    .bottom-panel {
+      background: #181b21;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+      border-radius: 0;
+      box-sizing: border-box;
     }
     .top-panel {
       min-height: 48px;
-      padding: 12px 0;
-      background: #181b21;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      padding: 12px 0 12px env(safe-area-inset-left,0), 12px 0 12px env(safe-area-inset-right,0);
+      border-top-left-radius: 0.7rem;
+      border-top-right-radius: 0.7rem;
+      margin-bottom: 0;
     }
     .bottom-panel {
       min-height: 90px;
-      padding: 12px 0;
-      background: #181b21;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      /* Учёт безопасной зоны снизу для современных телефонов! */
-      padding-bottom: env(safe-area-inset-bottom, 0);
+      padding: 12px 0 env(safe-area-inset-bottom, 0) 0;
+      border-bottom-left-radius: 0.7rem;
+      border-bottom-right-radius: 0.7rem;
+      margin-top: 0;
     }
+
     .game-field-container {
       flex: 1 1 auto;
       display: flex;
@@ -58,6 +68,7 @@
       justify-content: center;
       min-height: 0;
       min-width: 0;
+      position: relative;
     }
     canvas {
       display: block;
@@ -65,8 +76,70 @@
       box-shadow: 0 2px 12px #0008;
       touch-action: manipulation;
       border-radius: 8px;
-      max-width: 98vw;
-      max-height: 98vw;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 0;
+      margin-bottom: 0;
+      max-width: 92vw;     /* <-- безопасно! */
+      max-height: 70vh;
+      width: 100%;
+      height: auto;
+      box-sizing: border-box;
+      /* на максимальную доступную высоту */
+    }
+
+    /*==================== Альбомная (горизонтальная) ориентация ====================*/
+    @media (orientation: landscape) and (max-width: 1024px) {
+      body, .main-wrapper {
+        flex-direction: row;
+      }
+      .main-wrapper {
+        flex-direction: row;
+        align-items: stretch;
+      }
+      .top-panel, .bottom-panel {
+        width: 56px;
+        min-width: 56px;
+        max-width: 22vw;
+        min-height: 0;
+        height: auto;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1;
+        border-radius: 0.7rem;
+      }
+      .top-panel {
+        writing-mode: vertical-lr;
+        border-top-left-radius: 0.7rem;
+        border-bottom-left-radius: 0.7rem;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        margin: 0;
+        padding: env(safe-area-inset-top,0) 0 0 env(safe-area-inset-left,0);
+      }
+      .bottom-panel {
+        writing-mode: vertical-lr;
+        border-top-right-radius: 0.7rem;
+        border-bottom-right-radius: 0.7rem;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        margin: 0;
+        padding: 0 0 0 env(safe-area-inset-right,0);
+      }
+      .game-field-container {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        max-height: 92vh;    /* безопасная зона! */
+        align-items: center;
+        justify-content: center;
+      }
+      canvas {
+        max-height: 92vh;   /* больше высоты, но всё равно не до края */
+        max-width: 70vw;    /* чтобы не занять весь горизонтальный экран */
+        margin: 0 auto;
+      }
     }
   </style>
 </head>
@@ -76,7 +149,7 @@
     <div class="game-field-container">
       <canvas id="game-canvas"></canvas>
     </div>
-    <div class="bottom-panel">Навигация/кнопки v1.0.7</div>
+    <div class="bottom-panel">Навигация/кнопки v1.1.0</div>
   </div>
   <script>
     const GRID_SIZE = 10;
@@ -84,48 +157,69 @@
     const ctx = canvas.getContext('2d');
     let selectedCell = null;
 
-    function log(...args) { if (window && window.console) console.log(...args); }
+    function isLandscape() {
+      return window.matchMedia("(orientation: landscape)").matches;
+    }
 
-    // Высота панели определяется динамически (safe-area-helper)
-    function resizeCanvas() {
-      const mainWrap = document.querySelector('.main-wrapper');
-      const w = window.innerWidth;
-
-      // Высота именно ДИНАМИЧЕСКОГО вьюпорта:
-      // (в современных браузерах и при PWA это будет реальная видимая область)
-      const h = mainWrap ? mainWrap.clientHeight : window.innerHeight;
-
-      // Точные размеры панелей
+    function getPanelsSize() {
       const topPanel = document.querySelector('.top-panel');
       const bottomPanel = document.querySelector('.bottom-panel');
-      const topH = topPanel ? topPanel.getBoundingClientRect().height : 0;
-      const bottomH = bottomPanel ? bottomPanel.getBoundingClientRect().height : 0;
+      // в портретной ориентации: панели сверху и снизу
+      // в альбомной: панели слева и справа (как боковые бары)
+      if (!isLandscape()) {
+        return {
+          main: (topPanel ? topPanel.getBoundingClientRect().height : 0)
+              + (bottomPanel ? bottomPanel.getBoundingClientRect().height : 0)
+        }
+      } else {
+        return {
+          main: (topPanel ? topPanel.getBoundingClientRect().width : 0)
+              + (bottomPanel ? bottomPanel.getBoundingClientRect().width : 0)
+        }
+      }
+    }
 
-      // Главное: Канвас не должен вылезать за пределы между панелями!
-      let size = Math.min(
-        Math.floor(h - topH - bottomH),
-        Math.floor(w * 0.98)
-      );
-      size = Math.max(size, 200);
+    function resizeCanvas() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const panels = getPanelsSize();
+      const isLand = isLandscape();
 
-      canvas.style.width = size + 'px';
-      canvas.style.height = size + 'px';
+      // --- размеры canvas (адаптив!) ---
+      let maxSize;
+      if (!isLand) {
+        // портрет — ширина с запасом (не до краёв!)
+        maxSize = Math.min(
+          Math.floor(h - panels.main),
+          Math.floor(w * 0.92)  // 92vw, как в css, для безопасной зоны
+        );
+      } else {
+        // альбомная — высота (+ширина с запасом)
+        maxSize = Math.min(
+          Math.floor(h * 0.92), // запас сверху/снизу
+          Math.floor(w - panels.main)
+        );
+      }
+      maxSize = Math.max(maxSize, 200);
+
+      // --- установка размера ---
+      canvas.style.width = maxSize + 'px';
+      canvas.style.height = maxSize + 'px';
 
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = size * dpr;
-      canvas.height = size * dpr;
+      canvas.width = maxSize * dpr;
+      canvas.height = maxSize * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
 
       drawGrid();
-      log("[resizeCanvas]", { w, h, size, dpr, topH, bottomH });
     }
 
     function drawGrid() {
       const size = parseFloat(canvas.style.width) || 300;
-      ctx.clearRect(0, 0, size, size);
       const cellSize = size / GRID_SIZE;
 
+      ctx.clearRect(0, 0, size, size);
       for (let row = 0; row < GRID_SIZE; row++) {
         for (let col = 0; col < GRID_SIZE; col++) {
           let x = col * cellSize;
@@ -153,17 +247,12 @@
       let y = clientY - rect.top;
       const cellSize = rect.width / GRID_SIZE;
 
-      log("[getCellByCoords]", { clientX, clientY, rect: {...rect}, x, y, cellSize });
-
       const col = Math.floor(x / cellSize);
       const row = Math.floor(y / cellSize);
 
       if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) {
-        log("Клик вне сетки!", { row, col, x, y });
         return null;
       }
-
-      log("Определена ячейка", { row, col });
       return { row, col };
     }
 
@@ -171,9 +260,6 @@
       const cell = getCellByCoords(evt);
       selectedCell = cell;
       drawGrid();
-      if (cell) {
-        log(`Выбрана клетка: [${cell.row}, ${cell.col}]`);
-      }
     }
 
     canvas.addEventListener('click', handleClick);
@@ -182,14 +268,10 @@
       handleClick(evt);
     });
 
-    // Ресайз на изменение видимой зоны
     window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
-
-    // Инициализация
+    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
     setTimeout(resizeCanvas, 0);
-    // Иногда мобильные браузеры меняют высоту с задержкой после загрузки!
-    setTimeout(resizeCanvas, 500);
+    setTimeout(resizeCanvas, 200);
 
   </script>
 </body>
