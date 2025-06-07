@@ -78,7 +78,6 @@ html[data-theme="dark"] .modal-changelog-bg::after {
   position: absolute;
   inset: 0;
   background:
-    /* звёзды: много теней от двух простых точек! */
     radial-gradient(circle, #fff8 1.2px, transparent 1.5px) 80px 70px/180px 220px repeat,
     radial-gradient(circle, #b3ecff55 1.1px, transparent 1.8px) 60px 140px/220px 300px repeat,
     radial-gradient(circle, #fff3 0.7px, transparent 1.0px) 110px 10px/300px 340px repeat,
@@ -96,13 +95,10 @@ html[data-theme="light"]:not([data-theme]) .modal-changelog-bg::before {
   position: absolute;
   inset: 0;
   background:
-    /* лёгкие звездочки */
     radial-gradient(circle, #e0eac733 1.3px, transparent 1.6px) 40px 20px/210px 320px repeat,
     radial-gradient(circle, #abd7fa33 1.6px, transparent 1.5px) 120px 70px/130px 220px repeat,
-    /* облака */
     radial-gradient(ellipse at 60% 80%, #e8f7fc33 16px 7px, transparent 14px) 1.2% 63% / 280px 30px no-repeat,
     radial-gradient(ellipse at 30% 60%, #fdf8f233 22px 8px, transparent 17px) 33% 53% / 330px 33px no-repeat,
-    /* птички - простые дуги-эмодзи с фильтром */
     url('data:image/svg+xml;utf8,<svg width="90" height="26" xmlns="http://www.w3.org/2000/svg"><text x="3" y="20" font-size="2.1em" fill="gray" opacity="0.12">𝑉</text><text x="50" y="13" font-size="1.7em" fill="gray" opacity="0.13">𝑉</text></svg>') 35% 28% / 170px 32px no-repeat,
     url('data:image/svg+xml;utf8,<svg width="90" height="24" xmlns="http://www.w3.org/2000/svg"><text x="10" y="15" font-size="2em" fill="gray" opacity="0.14">𝑉</text></svg>') 85% 46% / 160px 32px no-repeat,
     transparent;
@@ -150,7 +146,6 @@ html[data-theme="light"]:not([data-theme]) .modal-changelog-bg::after {
   display: flex;
   flex-direction: column;
   max-height: 87vh;
-  /* мягкое появление */
   transform: scale(0.98) translateY(12px);
   opacity: .93;
   animation: dialogAppear 0.55s cubic-bezier(.13,.9,.38,1.07);
@@ -264,39 +259,37 @@ html[data-theme="light"]:not([data-theme]) .modal-changelog-bg::after {
   text-shadow: 0 2px 8px #ffffff12;
   font-weight: bold;
 }
-
 /* MOBILE MODAL */
 @media (max-width: 800px) {
   .modal-changelog-dialog { width: 98vw; min-width: 0; }
 }
-
 </style>
 
 <script>
 window.initChangelogModal = function(){
   const modal = document.getElementById('modalChangelog');
   const closeBtn = document.getElementById('closeChangelog');
-  // Авто-наследование темы
-  function updateTheme() {
-    // Атрибут сразу передаётся основной страницей, модалка ловит из html[data-theme]
-    // Ничего делать не надо: всё на переменных.
-  }
-  // реагировать на смену темы динамически
-  const observer = new MutationObserver(updateTheme);
-  observer.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
 
-  // Закрытие по ESC и outside
-  modal.addEventListener('keydown', function(e){
-    if(e.key === 'Escape') closeBtn.click();
-  });
+  // Работа закрытия
+  function closeModal() {
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  // Кнопка СПАСИБО
+  closeBtn.onclick = closeModal;
+
+  // Клик вне модального окна
   modal.addEventListener('mousedown', function(e){
-    if(e.target === modal) closeBtn.click();
+    if(e.target === modal) closeModal();
   });
-  closeBtn.onclick = function() {
-    modal.setAttribute('aria-hidden','true');
-    document.body.style.overflow='';
-  };
-  // scroll to anchors плавно
+
+  // Закрытие по ESC
+  modal.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeModal();
+  });
+
+  // Навигация-якоря
   document.querySelectorAll('.changelog-nav-link').forEach(link=>{
     link.addEventListener('click',function(e){
       e.preventDefault();
@@ -304,7 +297,8 @@ window.initChangelogModal = function(){
       if(tgt) tgt.scrollIntoView({behavior:'smooth', block:'start'});
     });
   });
-  // Плавный фокус для клавиатуры
+
+  // Автофокус
   setTimeout(()=>modal.focus(),20);
 };
 </script>
