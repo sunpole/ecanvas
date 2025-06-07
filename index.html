@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Game Grid Test</title>
+  <style>
+    body {
+      margin: 0;
+      background: #23272e;
+      color: #fff;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    #branch-banner {
+      /* Оформление баннера по умолчанию (может переопределяться в JS) */
+      display: none;
+    }
+    .top-panel, .bottom-panel {
+      min-height: 48px;
+      padding: 12px;
+      background: #181b21;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .game-field-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    canvas {
+      display: block;
+      background: #353c48;
+      box-shadow: 0 2px 12px #0008;
+      touch-action: none;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Баннер ветки (для индикации ветки dev, feature и др.) -->
+  <div id="branch-banner"></div>
+  <div class="top-panel">Инфо-панель</div>
+  <div class="game-field-container">
+    <canvas id="game-canvas"></canvas>
+  </div>
+  <div class="bottom-panel">Навигация/кнопки</div>
+  <script>
+    // ---- Здесь указывай актуальную ветку! ----
+    const BRANCH = 'dev'; // или 'main', 'feature-xxx', и т.д.
+
+    // Оформление и баннер ветки
+    window.addEventListener('DOMContentLoaded', () => {
+      const banner = document.getElementById('branch-banner');
+      if (BRANCH !== 'main') { // main обычно не отмечаем
+        banner.textContent = `Ветка: ${BRANCH}`;
+        banner.style.background = 'orange';
+        banner.style.color = 'black';
+        banner.style.padding = '6px';
+        banner.style.textAlign = 'center';
+        banner.style.fontWeight = 'bold';
+        banner.style.position = 'sticky';
+        banner.style.top = 0;
+        banner.style.zIndex = 1000;
+        banner.style.display = 'block';
+        // Можно поставить разные цвета по ветке:
+        if (BRANCH === 'dev') {
+          document.body.style.background = '#222831';
+          banner.style.background = '#ffbe3b';
+        } else if (BRANCH.startsWith('feature')) {
+          document.body.style.background = '#335';
+          banner.style.background = 'lightblue';
+        }
+      } else {
+        // Для main — стандартный фон
+        document.body.style.background = '#23272e';
+      }
+    });
+  </script>
+  <script>
+    // === НАСТРОЙКИ СЕТКИ ===
+    const GRID_SIZE = 10; // Измени это число — и будет другая сетка N x N!
+
+    // Цвета:
+    const FIELD_BG = "#353c48";
+    const CELL_BG = "#353c48";
+    const CELL_BORDER = "#23272e";
+    const SELECT_BG = "#6488f0";
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let selectedCell = null;
+
+    function resizeCanvas() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const panelSpace = 120;
+      let size;
+      if (w > h) {
+        size = Math.floor((h - panelSpace) * 0.85);
+      } else {
+        size = Math.floor(w * 0.85);
+      }
+      canvas.style.width = size + 'px';
+      canvas.style.height = size + 'px';
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      drawGrid();
+    }
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width;
+      const h = canvas.height;
+      const cellSize = w / GRID_SIZE;
+      for (let row = 0; row < GRID_SIZE; row++) {
+        for (let col = 0; col < GRID_SIZE; col++) {
+          let x = col * cellSize;
+          let y = row * cellSize;
+          ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col ? SELECT_BG : CELL_BG;
+          ctx.fillRect(x, y, cellSize, cellSize);
+          ctx.strokeStyle = CELL_BORDER;
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(x, y, cellSize, cellSize);
+        }
+      }
+    }
+
+    function getCellByCoords(evt) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      if (evt.touches && evt.touches.length) {
+        clientX = evt.touches[0].clientX;
+        clientY = evt.touches[0].clientY;
+      } else {
+        clientX = evt.clientX;
+        clientY = evt.clientY;
+      }
+      let x = (clientX - rect.left) * (canvas.width / rect.width);
+      let y = (clientY - rect.top) * (canvas.height / rect.height);
+      const cellSize = canvas.width / GRID_SIZE;
+      const col = Math.floor(x / cellSize);
+      const row = Math.floor(y / cellSize);
+      if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) return null;
+      return {row, col};
+    }
+
+    canvas.addEventListener('click', (evt) => {
+      selectedCell = getCellByCoords(evt);
+      drawGrid();
+    });
+
+    canvas.addEventListener('touchstart', (evt) => {
+      evt.preventDefault();
+      selectedCell = getCellByCoords(evt);
+      drawGrid();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+  </script>
+</body>
+</html>
