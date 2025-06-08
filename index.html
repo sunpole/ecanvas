@@ -61,6 +61,21 @@
       height: 100dvh;  
       width: 100vw;  
     }  
+
+    #media-indicator {
+  display: inline-block;
+  margin-left: 1.2em;
+  padding: 2px 12px;
+  border-radius: 12px;
+  background: transparent;
+  color: #7c8591;
+  font-size: 0.97em;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  border: 1px solid #3c414c;
+}
+    
     .top-panel, .bottom-panel {  
       background: var(--color-panel);  
       color: var(--color-text-main);  
@@ -256,6 +271,7 @@
 </head>  
 <body>  
 <div class="main-wrapper">  
+  <span id="media-indicator"></span>
   <div class="top-panel">  
     Инфо-панель  
     <button class="theme-toggle" id="themeToggle" title="Сменить тему">🌗</button>  
@@ -515,6 +531,29 @@
     });
     setTimeout(() => modal.focus(), 20);
   };
+
+// Детектор текущего активного медиа-пресета
+function updateMediaIndicator() {
+  const wid = window.innerWidth;
+  const hei = window.innerHeight;
+  let txt = '';
+  if(wid <= 650) {
+    txt = (wid < hei) ? 'Мобильник: книжный' : 'Мобильник: альбомный';
+  } else if(wid <= 1024 && hei <= 900) {
+    txt = 'Планшет/ноут: альбомный';
+  } else if(wid <= 1024) {
+    txt = 'Планшет/ноут: книжный';
+  } else {
+    txt = (wid > hei) ? 'ПК: альбомный' : 'ПК: книжный';
+  }
+  document.getElementById('media-indicator').textContent = txt;
+}
+// Первый вызов при загрузке
+updateMediaIndicator();
+// При каждом ресайзе/перевороте
+window.addEventListener('resize', updateMediaIndicator);
+window.addEventListener('orientationchange', updateMediaIndicator);
+  
 </script>
 </body>
 </html>
