@@ -455,10 +455,10 @@
       console.log('[MODAL] Закрытие по повторному нажатию DEV');
       return;
     }
-    // Если еще не загружали
+   // Если еще не загружали
     if (!container.innerHTML) {
       console.log('[MODAL] Загружаем changelog-modal.html ...');
-      const html = await fetch('changelog-modal.html').then(r=>r.text());
+      const html = await fetch('changelog-modal.html?v=' + Date.now()).then(r=>r.text());
       container.innerHTML = html;
       // Инициализируем модалку!
       if (window.initChangelogModal) window.initChangelogModal();
