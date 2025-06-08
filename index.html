@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Game Grid Test</title>
+  <!-- Подключение стилей -->
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/modal.css">
+</head>
+<body>
+<div class="main-wrapper">
+    <div class="top-panel">
+      <span id="media-indicator"></span>
+      Инфо-панель
+      <button class="theme-toggle" id="themeToggle" title="Сменить тему">🌗</button>
+    </div>
+    <div class="game-field-container">
+      <canvas id="game-canvas"></canvas>
+    </div>
+    <div class="bottom-panel">
+      Навигация/кнопки v1.1.6
+    </div>
+</div>
+
+<!-- Кнопка DEV -->
+<div class="footer-dev" id="footerDevBtn" tabindex="0" title="Change-log">
+  <span class="footer-dev__icon" aria-hidden="true">
+    <svg width="1.15em" height="1.15em" viewBox="0 0 20 20" fill="none">
+      <path d="M14.4 2.1l3.5 3.5c.5.5.5 1.3 0 1.7l-2.9 2.9c.1.8-.1 1.6-.7 2.2L7 17l-2 2-2-2 2-2 6.6-6.6c.6-.6 1.4-.8 2.2-.7l2.9-2.9c.5-.5 1.3-.5 1.8 0z" fill="currentColor"/>
+    </svg>
+  </span>
+  <span class="footer-dev__text">DEV</span>
+</div>
+
+<!-- Модалка changelog (динамически подгружается) -->
+<div id="modal-changelog-root"></div>
+
+<!-- Подключение скриптов -->
+<script src="scripts/main.js"></script>
+<script src="scripts/modal.js"></script>
+</body>
+</html>
