@@ -1,0 +1,27 @@
+.game-console {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 30, 0.95);
+  padding: 10px 15px;
+  border-radius: 8px;
+  z-index: 1000;
+  display: flex;
+}
+
+.game-console input {
+  width: 300px;
+  background: #1e1e1e;
+  color: #fff;
+  border: none;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 14px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.hidden {
+  display: none !important;
+}
