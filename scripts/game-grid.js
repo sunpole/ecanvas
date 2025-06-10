@@ -1,17 +1,39 @@
 // scripts/game-grid.js
 
-const GRID_SIZE = 10; // рабочая зона (без координатных рамок)
-const OUTLINE = 1;    // размер краевой рамки (по 1 сверху/снизу/слева/справа)
-const GRID_TOTAL = GRID_SIZE + 2 * OUTLINE; // 12
+// ======= НАСТРОЙКИ =======
+const GRID_SIZE = 10;      // Размер игрового поля (10x10), меняй по желанию
+const OUTLINE = 1;         // Толщина рамки с координатами (вертикально / горизонтально, всегда 1 клетка с каждой стороны)
+const GRID_TOTAL = GRID_SIZE + 2 * OUTLINE;  // всего клеток на канвасе
 
-const COORD_LETTERS = 'ABCDEFGHIJK'; // столбцы (11)
-const COORD_NUMS = Array.from({length: 9}, (_, i) => (9 - i).toString()); // строки (9..1)
+// ======= ГЕНЕРАЦИЯ КООРДИНАТ ДЛЯ БУКВЕННЫХ СТОЛБЦОВ (Excel-подобное, верх/низ поля) =======
+function generateColumnLabels(count) {
+  let labels = [];
+  for (let i = 0; i < count; i++) {
+    let label = '', n = i;
+    do {
+      label = String.fromCharCode(65 + (n % 26)) + label; // 65 = 'A'.charCodeAt(0)
+      n = Math.floor(n / 26) - 1;
+    } while (n >= 0);
+    labels.push(label);
+  }
+  return labels;
+}
 
+// ======= ГЕНЕРАЦИЯ КООРДИНАТ ДЛЯ ЦИФРОВЫХ СТРОК (слева/справа поля, сверху вниз) =======
+function generateRowLabels(count) {
+  return Array.from({ length: count }, (_, i) => (count - i).toString());
+}
+
+// ======= ПЕРЕМЕННЫЕ ДЛЯ КООРДИНАТ =======
+const COORD_LETTERS = generateColumnLabels(GRID_SIZE); // по горизонтали, Excel-style
+const COORD_NUMS = generateRowLabels(GRID_SIZE);       // по вертикали
+
+// ======= КАНВАС ПОДГОТОВКА =======
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
-
 let selectedCell = null;
 
+// ======= ВСПОМОГАТЕЛЬНЫЕ =======
 function isLandscape() {
   return window.matchMedia("(orientation: landscape)").matches;
 }
@@ -39,16 +61,18 @@ function getColors() {
     CELL_BG: root.getPropertyValue('--color-cell').trim() || '#343a40',
     CELL_BORDER: root.getPropertyValue('--color-border').trim() || '#283042',
     SELECT_BG: root.getPropertyValue('--color-accent').trim() || '#337ad9',
-    COORD_BG: '#2567e7',
-    COORD_TEXT: '#ffe438'
+    COORD_BG: root.getPropertyValue('--coord-bg').trim() || '#2567e7',
+    COORD_TEXT: root.getPropertyValue('--coord-text').trim() || '#ffe438'
   }
 }
 
+// ======= АДАПТАЦИЯ ПОД РАЗМЕР ОКНА =======
 function resizeCanvas() {
   const w = window.innerWidth;
   const h = window.innerHeight;
   const panels = getPanelsSize();
   const isLand = isLandscape();
+
   let maxSize;
   if (!isLand) {
     maxSize = Math.min(
@@ -64,6 +88,7 @@ function resizeCanvas() {
   maxSize = Math.max(maxSize, 200);
   canvas.style.width = maxSize + 'px';
   canvas.style.height = maxSize + 'px';
+
   const dpr = window.devicePixelRatio || 1;
   canvas.width = maxSize * dpr;
   canvas.height = maxSize * dpr;
@@ -72,6 +97,7 @@ function resizeCanvas() {
   drawGrid();
 }
 
+// ======= ОТРИСОВКА СЕТКИ =======
 function drawGrid() {
   const size = parseFloat(canvas.style.width) || 300;
   const cellSize = size / GRID_TOTAL;
@@ -81,47 +107,53 @@ function drawGrid() {
   ctx.fillStyle = C.FIELD_BG;
   ctx.fillRect(0, 0, size, size);
 
-  // --- Навигационная рамка ---
+  // ==== КООРДИНАТНАЯ РАМКА ====
   ctx.font = `bold ${Math.floor(cellSize * 0.55)}px Arial`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   // --- Столбцы: буквы сверху и снизу ---
   for (let col = 1; col <= GRID_SIZE; col++) {
-    let x = (col + OUTLINE - 1) * cellSize + cellSize/2;
+    let x = (col + OUTLINE - 1) * cellSize + cellSize / 2;
+
     // top
     ctx.fillStyle = C.COORD_BG;
     ctx.fillRect(col * cellSize, 0, cellSize, cellSize);
     ctx.fillStyle = C.COORD_TEXT;
-    ctx.fillText(COORD_LETTERS[col - 1], x, cellSize/2);
+    ctx.fillText(COORD_LETTERS[col - 1] || '', x, cellSize / 2);
+
     // bottom
     ctx.fillStyle = C.COORD_BG;
-    ctx.fillRect(col * cellSize, (GRID_TOTAL-1)*cellSize, cellSize, cellSize);
+    ctx.fillRect(col * cellSize, (GRID_TOTAL - 1) * cellSize, cellSize, cellSize);
     ctx.fillStyle = C.COORD_TEXT;
-    ctx.fillText(COORD_LETTERS[col - 1], x, (GRID_TOTAL-1)*cellSize + cellSize/2);
+    ctx.fillText(COORD_LETTERS[col - 1] || '', x, (GRID_TOTAL - 1) * cellSize + cellSize / 2);
   }
 
   // --- Строки: цифры слева и справа ---
   for (let row = 1; row <= GRID_SIZE; row++) {
-    let y = (row + OUTLINE - 1) * cellSize + cellSize/2;
+    let y = (row + OUTLINE - 1) * cellSize + cellSize / 2;
+
     // left
     ctx.fillStyle = C.COORD_BG;
     ctx.fillRect(0, row * cellSize, cellSize, cellSize);
     ctx.fillStyle = C.COORD_TEXT;
-    ctx.fillText(COORD_NUMS[row - 1], cellSize/2, y);
+    ctx.fillText(COORD_NUMS[row - 1] || '', cellSize / 2, y);
+
     // right
     ctx.fillStyle = C.COORD_BG;
-    ctx.fillRect((GRID_TOTAL-1)*cellSize, row * cellSize, cellSize, cellSize);
+    ctx.fillRect((GRID_TOTAL - 1) * cellSize, row * cellSize, cellSize, cellSize);
     ctx.fillStyle = C.COORD_TEXT;
-    ctx.fillText(COORD_NUMS[row - 1], (GRID_TOTAL-1)*cellSize + cellSize/2, y);
+    ctx.fillText(COORD_NUMS[row - 1] || '', (GRID_TOTAL - 1) * cellSize + cellSize / 2, y);
   }
 
-  // --- Игровые клетки ---
+  // ==== ВНУТРЕННИЕ КЛЕТКИ ====
   for (let row = 0; row < GRID_SIZE; row++) {
     for (let col = 0; col < GRID_SIZE; col++) {
       let x = (col + OUTLINE) * cellSize;
       let y = (row + OUTLINE) * cellSize;
-      ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col ? C.SELECT_BG : C.CELL_BG;
+      ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col
+        ? C.SELECT_BG
+        : C.CELL_BG;
       ctx.fillRect(x, y, cellSize, cellSize);
       ctx.strokeStyle = C.CELL_BORDER;
       ctx.lineWidth = 1.2;
@@ -130,6 +162,7 @@ function drawGrid() {
   }
 }
 
+// ======= ВСПОМОГАТЕЛЬНО: Получение ячейки по координатам клика =======
 function getCellByCoords(evt) {
   const rect = canvas.getBoundingClientRect();
   let clientX, clientY;
@@ -143,7 +176,7 @@ function getCellByCoords(evt) {
   let x = clientX - rect.left;
   let y = clientY - rect.top;
   const cellSize = rect.width / GRID_TOTAL;
-  // Клик только по внутренним клеткам
+  // Клик только по внутренним клеткам (игровая зона)
   const col = Math.floor(x / cellSize) - OUTLINE;
   const row = Math.floor(y / cellSize) - OUTLINE;
   if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) {
@@ -152,12 +185,14 @@ function getCellByCoords(evt) {
   return { row, col };
 }
 
+// ======= ОБРАБОТКА КЛИКОВ =======
 function handleClick(evt) {
   const cell = getCellByCoords(evt);
   selectedCell = cell;
   drawGrid();
 }
 
+// ======= СЛУШАТЕЛИ СОБЫТИЙ И ИНИЦИАЛИЗАЦИЯ =======
 canvas.addEventListener('click', handleClick);
 canvas.addEventListener('touchstart', (evt) => {
   evt.preventDefault();
@@ -169,3 +204,10 @@ const obs = new MutationObserver(() => drawGrid());
 obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 setTimeout(resizeCanvas, 0);
 setTimeout(resizeCanvas, 200);
+
+// ======= ОПИСАНИЕ НАСТРОЕК =======
+// GRID_SIZE    - размер внутреннего игрового поля (менять для увеличения/уменьшения размеров)
+// OUTLINE      - всегда 1 (обрамляет координатной рамкой)
+// COORD_LETTERS, COORD_NUMS — генерируются автоматически под GRID_SIZE
+
+// Пример: если GRID_SIZE = 25, то координатная сетка будет от А до Y и от 25 вниз до 1.
