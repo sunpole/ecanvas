@@ -1,12 +1,21 @@
 // scripts/game-grid.js
-const GRID_SIZE = 10;
+
+const GRID_SIZE = 10; // рабочая зона (без координатных рамок)
+const OUTLINE = 1;    // размер краевой рамки (по 1 сверху/снизу/слева/справа)
+const GRID_TOTAL = GRID_SIZE + 2 * OUTLINE; // 12
+
+const COORD_LETTERS = 'ABCDEFGHIJK'; // столбцы (11)
+const COORD_NUMS = Array.from({length: 9}, (_, i) => (9 - i).toString()); // строки (9..1)
+
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
+
 let selectedCell = null;
 
 function isLandscape() {
   return window.matchMedia("(orientation: landscape)").matches;
 }
+
 function getPanelsSize() {
   const topPanel = document.querySelector('.top-panel');
   const bottomPanel = document.querySelector('.bottom-panel');
@@ -22,15 +31,19 @@ function getPanelsSize() {
     }
   }
 }
+
 function getColors() {
   const root = getComputedStyle(document.documentElement);
   return {
-    FIELD_BG: root.getPropertyValue('--color-card').trim(),
-    CELL_BG: root.getPropertyValue('--color-cell').trim(),
-    CELL_BORDER: root.getPropertyValue('--color-border').trim(),
-    SELECT_BG: root.getPropertyValue('--color-accent').trim()
+    FIELD_BG: root.getPropertyValue('--color-card').trim() || '#222',
+    CELL_BG: root.getPropertyValue('--color-cell').trim() || '#343a40',
+    CELL_BORDER: root.getPropertyValue('--color-border').trim() || '#283042',
+    SELECT_BG: root.getPropertyValue('--color-accent').trim() || '#337ad9',
+    COORD_BG: '#2567e7',
+    COORD_TEXT: '#ffe438'
   }
 }
+
 function resizeCanvas() {
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -58,17 +71,56 @@ function resizeCanvas() {
   ctx.scale(dpr, dpr);
   drawGrid();
 }
+
 function drawGrid() {
   const size = parseFloat(canvas.style.width) || 300;
-  const cellSize = size / GRID_SIZE;
+  const cellSize = size / GRID_TOTAL;
   const C = getColors();
+
   ctx.clearRect(0, 0, size, size);
   ctx.fillStyle = C.FIELD_BG;
   ctx.fillRect(0, 0, size, size);
+
+  // --- Навигационная рамка ---
+  ctx.font = `bold ${Math.floor(cellSize * 0.55)}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // --- Столбцы: буквы сверху и снизу ---
+  for (let col = 1; col <= GRID_SIZE; col++) {
+    let x = (col + OUTLINE - 1) * cellSize + cellSize/2;
+    // top
+    ctx.fillStyle = C.COORD_BG;
+    ctx.fillRect(col * cellSize, 0, cellSize, cellSize);
+    ctx.fillStyle = C.COORD_TEXT;
+    ctx.fillText(COORD_LETTERS[col - 1], x, cellSize/2);
+    // bottom
+    ctx.fillStyle = C.COORD_BG;
+    ctx.fillRect(col * cellSize, (GRID_TOTAL-1)*cellSize, cellSize, cellSize);
+    ctx.fillStyle = C.COORD_TEXT;
+    ctx.fillText(COORD_LETTERS[col - 1], x, (GRID_TOTAL-1)*cellSize + cellSize/2);
+  }
+
+  // --- Строки: цифры слева и справа ---
+  for (let row = 1; row <= GRID_SIZE; row++) {
+    let y = (row + OUTLINE - 1) * cellSize + cellSize/2;
+    // left
+    ctx.fillStyle = C.COORD_BG;
+    ctx.fillRect(0, row * cellSize, cellSize, cellSize);
+    ctx.fillStyle = C.COORD_TEXT;
+    ctx.fillText(COORD_NUMS[row - 1], cellSize/2, y);
+    // right
+    ctx.fillStyle = C.COORD_BG;
+    ctx.fillRect((GRID_TOTAL-1)*cellSize, row * cellSize, cellSize, cellSize);
+    ctx.fillStyle = C.COORD_TEXT;
+    ctx.fillText(COORD_NUMS[row - 1], (GRID_TOTAL-1)*cellSize + cellSize/2, y);
+  }
+
+  // --- Игровые клетки ---
   for (let row = 0; row < GRID_SIZE; row++) {
     for (let col = 0; col < GRID_SIZE; col++) {
-      let x = col * cellSize;
-      let y = row * cellSize;
+      let x = (col + OUTLINE) * cellSize;
+      let y = (row + OUTLINE) * cellSize;
       ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col ? C.SELECT_BG : C.CELL_BG;
       ctx.fillRect(x, y, cellSize, cellSize);
       ctx.strokeStyle = C.CELL_BORDER;
@@ -77,6 +129,7 @@ function drawGrid() {
     }
   }
 }
+
 function getCellByCoords(evt) {
   const rect = canvas.getBoundingClientRect();
   let clientX, clientY;
@@ -89,19 +142,22 @@ function getCellByCoords(evt) {
   }
   let x = clientX - rect.left;
   let y = clientY - rect.top;
-  const cellSize = rect.width / GRID_SIZE;
-  const col = Math.floor(x / cellSize);
-  const row = Math.floor(y / cellSize);
+  const cellSize = rect.width / GRID_TOTAL;
+  // Клик только по внутренним клеткам
+  const col = Math.floor(x / cellSize) - OUTLINE;
+  const row = Math.floor(y / cellSize) - OUTLINE;
   if (col < 0 || row < 0 || col >= GRID_SIZE || row >= GRID_SIZE) {
     return null;
   }
   return { row, col };
 }
+
 function handleClick(evt) {
   const cell = getCellByCoords(evt);
   selectedCell = cell;
   drawGrid();
 }
+
 canvas.addEventListener('click', handleClick);
 canvas.addEventListener('touchstart', (evt) => {
   evt.preventDefault();
