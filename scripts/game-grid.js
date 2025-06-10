@@ -2,8 +2,18 @@
 
 // ======= НАСТРОЙКИ =======
 const GRID_SIZE = 10;      // Размер игрового поля (10x10), меняй по желанию
-const OUTLINE = 1;         // Толщина рамки с координатами (вертикально / горизонтально, всегда 1 клетка с каждой стороны)
-const GRID_TOTAL = GRID_SIZE + 2 * OUTLINE;  // всего клеток на канвасе
+const OUTLINE = 1;         // Толщина рамки с координатами (1 клетка с каждой стороны)
+const GRID_TOTAL = GRID_SIZE + 2 * OUTLINE;  // Всего клеток на канвасе
+
+// ======= СТАРТ И ФИНИШ (автоматически по центру левого/правого края) =======
+const SPAWN_CELLS = [
+  { row: Math.floor(GRID_SIZE/2)-1, col: 0 },
+  { row: Math.floor(GRID_SIZE/2),   col: 0 },
+];
+const EXIT_CELLS = [
+  { row: Math.floor(GRID_SIZE/2)-1, col: GRID_SIZE + OUTLINE },
+  { row: Math.floor(GRID_SIZE/2),   col: GRID_SIZE + OUTLINE },
+];
 
 // ======= ГЕНЕРАЦИЯ КООРДИНАТ ДЛЯ БУКВЕННЫХ СТОЛБЦОВ (Excel-подобное, верх/низ поля) =======
 function generateColumnLabels(count) {
@@ -62,7 +72,10 @@ function getColors() {
     CELL_BORDER: root.getPropertyValue('--color-border').trim() || '#283042',
     SELECT_BG: root.getPropertyValue('--color-accent').trim() || '#337ad9',
     COORD_BG: root.getPropertyValue('--coord-bg').trim() || '#2567e7',
-    COORD_TEXT: root.getPropertyValue('--coord-text').trim() || '#ffe438'
+    COORD_TEXT: root.getPropertyValue('--coord-text').trim() || '#ffe438',
+    SPAWN_BG: '#ffe066',    // охра/жёлтый
+    EXIT_BG: '#a31322'      // тёмно-красный
+    
   }
 }
 
@@ -146,12 +159,32 @@ function drawGrid() {
     ctx.fillText(COORD_NUMS[row - 1] || '', (GRID_TOTAL - 1) * cellSize + cellSize / 2, y);
   }
 
-  // ==== ВНУТРЕННИЕ КЛЕТКИ ====
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      let x = (col + OUTLINE) * cellSize;
-      let y = (row + OUTLINE) * cellSize;
-      ctx.fillStyle = selectedCell && selectedCell.row === row && selectedCell.col === col
+  // ==== ВСЕ КЛЕТКИ ПОЛЯ (с учетом краёв) ====
+for (let row = 0; row < GRID_TOTAL; row++) {
+  for (let col = 0; col < GRID_TOTAL; col++) {
+    let x = col * cellSize;
+    let y = row * cellSize;
+
+    // Проверка: стартовая (жёлтая охра)
+    const isSpawn = SPAWN_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
+
+    // Проверка: финишная (тёмно-красная)
+    const isExit = EXIT_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
+
+    if (isSpawn) {
+      ctx.fillStyle = C.SPAWN_BG;
+      ctx.fillRect(x, y, cellSize, cellSize);
+    } else if (isExit) {
+      ctx.fillStyle = C.EXIT_BG;
+      ctx.fillRect(x, y, cellSize, cellSize);
+    }
+
+    // Обычные игровые клетки (внутренняя зона)
+    if (
+      row >= OUTLINE && row < GRID_SIZE + OUTLINE &&
+      col >= OUTLINE && col < GRID_SIZE + OUTLINE
+    ) {
+      ctx.fillStyle = selectedCell && selectedCell.row === (row - OUTLINE) && selectedCell.col === (col - OUTLINE)
         ? C.SELECT_BG
         : C.CELL_BG;
       ctx.fillRect(x, y, cellSize, cellSize);
