@@ -159,38 +159,39 @@ function drawGrid() {
     ctx.fillText(COORD_NUMS[row - 1] || '', (GRID_TOTAL - 1) * cellSize + cellSize / 2, y);
   }
 
-  // ==== ВСЕ КЛЕТКИ ПОЛЯ (с учетом краёв) ====
-for (let row = 0; row < GRID_TOTAL; row++) {
-  for (let col = 0; col < GRID_TOTAL; col++) {
-    let x = col * cellSize;
-    let y = row * cellSize;
+    // ==== ВСЕ КЛЕТКИ ПОЛЯ (с учетом краёв) ====
+  for (let row = 0; row < GRID_TOTAL; row++) {
+    for (let col = 0; col < GRID_TOTAL; col++) {
+      let x = col * cellSize;
+      let y = row * cellSize;
 
-    // Проверка: стартовая (жёлтая охра)
-    const isSpawn = SPAWN_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
+      // Проверка: стартовая (жёлтая охра)
+      const isSpawn = SPAWN_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
 
-    // Проверка: финишная (тёмно-красная)
-    const isExit = EXIT_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
+      // Проверка: финишная (тёмно-красная)
+      const isExit = EXIT_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
 
-    if (isSpawn) {
-      ctx.fillStyle = C.SPAWN_BG;
-      ctx.fillRect(x, y, cellSize, cellSize);
-    } else if (isExit) {
-      ctx.fillStyle = C.EXIT_BG;
-      ctx.fillRect(x, y, cellSize, cellSize);
-    }
+      if (isSpawn) {
+        ctx.fillStyle = C.SPAWN_BG;
+        ctx.fillRect(x, y, cellSize, cellSize);
+      } else if (isExit) {
+        ctx.fillStyle = C.EXIT_BG;
+        ctx.fillRect(x, y, cellSize, cellSize);
+      }
 
-    // Обычные игровые клетки (внутренняя зона)
-    if (
-      row >= OUTLINE && row < GRID_SIZE + OUTLINE &&
-      col >= OUTLINE && col < GRID_SIZE + OUTLINE
-    ) {
-      ctx.fillStyle = selectedCell && selectedCell.row === (row - OUTLINE) && selectedCell.col === (col - OUTLINE)
-        ? C.SELECT_BG
-        : C.CELL_BG;
-      ctx.fillRect(x, y, cellSize, cellSize);
-      ctx.strokeStyle = C.CELL_BORDER;
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(x, y, cellSize, cellSize);
+      // Обычные игровые клетки (внутренняя зона)
+      if (
+        row >= OUTLINE && row < GRID_SIZE + OUTLINE &&
+        col >= OUTLINE && col < GRID_SIZE + OUTLINE
+      ) {
+        ctx.fillStyle = selectedCell && selectedCell.row === (row - OUTLINE) && selectedCell.col === (col - OUTLINE)
+          ? C.SELECT_BG
+          : C.CELL_BG;
+        ctx.fillRect(x, y, cellSize, cellSize);
+        ctx.strokeStyle = C.CELL_BORDER;
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(x, y, cellSize, cellSize);
+      }
     }
   }
 }
