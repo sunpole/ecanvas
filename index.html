@@ -11,12 +11,13 @@
   <link rel="stylesheet" href="styles/modal.css">
   <link rel="stylesheet" href="styles/dev-console.css">
 </head>
+<body>
+
   <!-- Консоль команд -->
 <div id="gameConsole" class="game-console hidden">
   <input type="text" id="consoleInput" placeholder="Введите команду и нажмите Enter...">
 </div>
-
-<body>
+  
 <div class="main-wrapper">
     <div class="top-panel">
       <span id="media-indicator"></span>
@@ -45,10 +46,10 @@
 <div id="modal-changelog-root"></div>
 
 <!-- Подключение скриптов -->
-<script src="scripts/theme.js"></script>
-<script src="scripts/media-indicator.js"></script>
-<script src="scripts/game-grid.js"></script>
-<script src="scripts/modal-changelog.js"></script>
-<script src="scripts/dev-console.js"></script>
+<script src="scripts/theme.js" defer></script>
+<script src="scripts/media-indicator.js" defer></script>
+<script src="scripts/game-grid.js" defer></script>
+<script src="scripts/modal-changelog.js" defer></script>
+<script src="scripts/dev-console.js" defer></script>
 </body>
 </html>
