@@ -4,14 +4,7 @@
 import { GRID_SIZE, OUTLINE, GRID_TOTAL } from './config.js';
 
 // ======= СТАРТ И ФИНИШ =======
-const SPAWN_CELLS = [
-  { row: Math.floor(GRID_SIZE/2)-1, col: 0 },
-  { row: Math.floor(GRID_SIZE/2),   col: 0 },
-];
-const EXIT_CELLS = [
-  { row: Math.floor(GRID_SIZE/2)-1, col: GRID_SIZE + OUTLINE },
-  { row: Math.floor(GRID_SIZE/2),   col: GRID_SIZE + OUTLINE },
-];
+import { SPAWN_CELLS, EXIT_CELLS } from './config.js';
 
 // ======= КООРДИНАТЫ =======
 function generateColumnLabels(count) {
