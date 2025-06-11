@@ -1,4 +1,4 @@
-// scripts/game-grid.js
+// scripts/grid.js
 
 // ======= НАСТРОЙКИ =======
 const GRID_SIZE = 10;
