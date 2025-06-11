@@ -1,9 +1,7 @@
 // scripts/grid.js
 
 // ======= НАСТРОЙКИ =======
-const GRID_SIZE = 10;
-const OUTLINE = 1;
-const GRID_TOTAL = GRID_SIZE + 2 * OUTLINE;
+import { GRID_SIZE, OUTLINE, GRID_TOTAL } from './config.js';
 
 // ======= СТАРТ И ФИНИШ =======
 const SPAWN_CELLS = [
