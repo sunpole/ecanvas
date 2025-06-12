@@ -1,6 +1,3 @@
-так все верно?
-
-
 // scripts/grid.js
 
 // ======= НАСТРОЙКИ =======
@@ -10,9 +7,10 @@ import { GRID_SIZE, OUTLINE, GRID_TOTAL } from './config.js';
 import { SPAWN_CELLS, EXIT_CELLS } from './config.js';
 
 // ======= РЕАЛЬНОЕ ПОЛЕ И ФУНКЦИИ =======
-export let grid = [];
+export let grid = []; // Двумерный массив, хранящий текущее состояние клеток
 
-// ======= КООРДИНАТЫ =======
+// ======= ГЕНЕРАЦИЯ КООРДИНАТ =======
+// Генерация буквенных координат столбцов (A, B, ..., Z, AA, AB...)
 function generateColumnLabels(count) {
   let labels = [];
   for (let i = 0; i < count; i++) {
@@ -26,6 +24,7 @@ function generateColumnLabels(count) {
   return labels;
 }
 
+// Генерация цифровых координат строк (10, 9, ..., 1)
 function generateRowLabels(count) {
   return Array.from({ length: count }, (_, i) => (count - i).toString());
 }
@@ -33,7 +32,7 @@ function generateRowLabels(count) {
 const COORD_LETTERS = generateColumnLabels(GRID_SIZE);
 const COORD_NUMS = generateRowLabels(GRID_SIZE);
 
-// ======= КАНВАС =======
+// ======= КАНВАС И КОНТЕКСТ =======
 const canvas = document.getElementById('game-canvas');
 if (!canvas) {
   console.error("❌ Canvas с id='game-canvas' не найден!");
@@ -47,9 +46,10 @@ if (!ctx) {
   console.log("✅ Контекст 2D получен");
 }
 
-let selectedCell = null;
+let selectedCell = null; // Последняя выбранная пользователем клетка
 
-// Создаёт двумерный массив клеток с координатами и статусом
+// ======= СОЗДАНИЕ СЕТКИ =======
+// Генерирует двумерный массив сетки GRID_SIZE x GRID_SIZE
 export function createGrid(rows = GRID_SIZE, cols = GRID_SIZE) {
   grid = [];
   for (let row = 0; row < rows; row++) {
@@ -57,46 +57,43 @@ export function createGrid(rows = GRID_SIZE, cols = GRID_SIZE) {
     for (let col = 0; col < cols; col++) {
       let status = 'empty';
 
-      // Автоматически помечаем SPAWN и EXIT по данным из конфига
+      // Назначаем стартовые и конечные клетки по конфигу
       if (SPAWN_CELLS.some(cell => cell.row === row && cell.col === col)) {
         status = 'spawn';
       }
       if (EXIT_CELLS.some(cell => cell.row === row && cell.col === col)) {
         status = 'exit';
       }
-      rowArr.push({
-        row: row,
-        col: col,
-        status: status
-      });
+      rowArr.push({ row, col, status });
     }
     grid.push(rowArr);
   }
   console.log("✅ Сетка создана", grid);
 }
 
-// Проверяет, можно ли пройти по клетке
+// ======= ПРОВЕРКА ПРОХОДИМОСТИ =======
+// Возвращает true, если клетка пуста или является выходом
 export function isCellWalkable(row, col) {
-  if (
-    row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE
-  ) return false;
+  if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) return false;
   const st = grid[row][col]?.status;
   return (st === 'empty' || st === 'exit');
 }
 
-// Изменяет статус клетки (например, при установке башни)
+// ======= ОБНОВЛЕНИЕ СТАТУСА =======
+// Устанавливает новый статус клетки (например, 'tower', 'blocked')
 export function setCellStatus(row, col, status) {
   if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) return false;
   grid[row][col].status = status;
-  // Можно добавить visual update или сообщение в UI
   return true;
 }
 
-
+// ======= ОПРЕДЕЛЕНИЕ ОРИЕНТАЦИИ =======
 function isLandscape() {
   return window.matchMedia("(orientation: landscape)").matches;
 }
 
+// ======= ВЫЧИСЛЕНИЕ РАЗМЕРОВ ПАНЕЛЕЙ =======
+// Возвращает сумму высот/ширин верхней и нижней панелей
 function getPanelsSize() {
   const topPanel = document.querySelector('.top-panel');
   const bottomPanel = document.querySelector('.bottom-panel');
@@ -116,6 +113,7 @@ function getPanelsSize() {
   }
 }
 
+// ======= ПОЛУЧЕНИЕ ЦВЕТОВ ИЗ CSS-ПЕРЕМЕННЫХ =======
 function getColors() {
   const root = getComputedStyle(document.documentElement);
   return {
@@ -130,6 +128,7 @@ function getColors() {
   };
 }
 
+// ======= МАСШТАБИРОВАНИЕ И РАСЧЁТ КАНВАСА =======
 function resizeCanvas() {
   if (!canvas || !ctx) {
     console.warn("⚠️ Пропущен resizeCanvas — canvas или контекст не готовы");
@@ -141,6 +140,7 @@ function resizeCanvas() {
   const panels = getPanelsSize();
   const isLand = isLandscape();
 
+  // Выбор максимального размера для квадрата
   let maxSize;
   if (!isLand) {
     maxSize = Math.min(Math.floor(h - panels.main), Math.floor(w * 0.92));
@@ -149,6 +149,7 @@ function resizeCanvas() {
   }
   maxSize = Math.max(maxSize, 200);
 
+  // Установка размеров и масштабирования
   canvas.style.width = maxSize + 'px';
   canvas.style.height = maxSize + 'px';
   canvas.style.aspectRatio = '1 / 1';
@@ -158,9 +159,11 @@ function resizeCanvas() {
   canvas.height = maxSize * dpr;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
+
   drawGrid();
 }
 
+// ======= ОТРИСОВКА СЕТКИ =======
 function drawGrid() {
   if (!ctx) {
     console.error("❌ drawGrid: контекст не готов");
@@ -179,18 +182,19 @@ function drawGrid() {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
+  // Рисуем координаты по краям
   for (let col = 1; col <= GRID_SIZE; col++) {
     ctx.fillStyle = C.COORD_BG;
     ctx.fillRect(col * cellSize, 0, cellSize, cellSize);
     ctx.fillRect(col * cellSize, (GRID_TOTAL - 1) * cellSize, cellSize, cellSize);
   }
-
   for (let row = 1; row <= GRID_SIZE; row++) {
     ctx.fillStyle = C.COORD_BG;
     ctx.fillRect(0, row * cellSize, cellSize, cellSize);
     ctx.fillRect((GRID_TOTAL - 1) * cellSize, row * cellSize, cellSize, cellSize);
   }
 
+  // Основная сетка и клетки
   for (let row = 0; row < GRID_TOTAL; row++) {
     for (let col = 0; col < GRID_TOTAL; col++) {
       let x = col * cellSize;
@@ -199,6 +203,7 @@ function drawGrid() {
       const isSpawn = SPAWN_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
       const isExit = EXIT_CELLS.some(cell => cell.row + OUTLINE === row && cell.col === col);
 
+      // Заливка стартов и выходов
       if (isSpawn) {
         ctx.fillStyle = C.SPAWN_BG;
         ctx.fillRect(x, y, cellSize, cellSize);
@@ -207,6 +212,7 @@ function drawGrid() {
         ctx.fillRect(x, y, cellSize, cellSize);
       }
 
+      // Ячейки поля (внутренние координаты)
       if (row >= OUTLINE && row < GRID_SIZE + OUTLINE && col >= OUTLINE && col < GRID_SIZE + OUTLINE) {
         ctx.fillStyle = selectedCell && selectedCell.row === (row - OUTLINE) && selectedCell.col === (col - OUTLINE)
           ? C.SELECT_BG : C.CELL_BG;
@@ -218,13 +224,13 @@ function drawGrid() {
     }
   }
 
+  // Подписи координат (буквы и цифры)
   for (let col = 1; col <= GRID_SIZE; col++) {
     let x = (col + OUTLINE - 1) * cellSize + cellSize / 2;
     ctx.fillStyle = C.COORD_TEXT;
     ctx.fillText(COORD_LETTERS[col - 1] || '', x, cellSize / 2);
     ctx.fillText(COORD_LETTERS[col - 1] || '', x, (GRID_TOTAL - 1) * cellSize + cellSize / 2);
   }
-
   for (let row = 1; row <= GRID_SIZE; row++) {
     let y = (row + OUTLINE - 1) * cellSize + cellSize / 2;
     ctx.fillStyle = C.COORD_TEXT;
@@ -233,6 +239,8 @@ function drawGrid() {
   }
 }
 
+// ======= ОБРАБОТКА КЛИКОВ =======
+// Возвращает координаты клетки из события мыши/тача
 function getCellByCoords(evt) {
   const rect = canvas.getBoundingClientRect();
   let clientX, clientY;
@@ -258,23 +266,90 @@ function getCellByCoords(evt) {
   return { row, col };
 }
 
+// Устанавливает выбранную клетку и обновляет поле
 function handleClick(evt) {
   const cell = getCellByCoords(evt);
+  if (!cell) return;
+
+  let currentStatus = grid[cell.row][cell.col].status;
+  let newStatus = currentStatus === 'empty' ? 'tower' : 'empty';
+
+  // Здесь добавить проверку пути, если новая клетка станет 'tower'
+  if (newStatus === 'tower') {
+    setCellStatus(cell.row, cell.col, newStatus);
+    const pathExists = checkPathExists(); // ваша функция проверки пути
+    if (!pathExists) {
+      // Если пути нет, отменяем изменение
+      setCellStatus(cell.row, cell.col, currentStatus);
+      alert('Нельзя блокировать весь путь!');
+      return;
+    }
+  } else {
+    setCellStatus(cell.row, cell.col, newStatus);
+  }
+
   selectedCell = cell;
   drawGrid();
 }
 
-if (canvas) {
-  canvas.addEventListener('click', handleClick);
-  canvas.addEventListener('touchstart', (evt) => {
-    evt.preventDefault();
-    handleClick(evt);
-  });
+
+
+// ======= ДОСТУП К ВЫБРАННОЙ КЛЕТКЕ =======
+export function getSelectedCell() {
+  return selectedCell;
 }
 
+export function setSelectedCell(cell) {
+  if (
+    cell &&
+    typeof cell.row === 'number' &&
+    typeof cell.col === 'number' &&
+    cell.row >= 0 && cell.row < GRID_SIZE &&
+    cell.col >= 0 && cell.col < GRID_SIZE
+  ) {
+    selectedCell = cell;
+    drawGrid();
+    return true;
+  }
+  return false;
+}
+// Возвращает соседние (вверх, вниз, влево, вправо) клетки — для pathfinding
+export function getNeighbors(row, col) {
+  const neighbors = [];
+  const deltas = [
+    [-1, 0], [1, 0],   // вверх, вниз
+    [0, -1], [0, 1]    // влево, вправо
+  ];
+  for (let [dr, dc] of deltas) {
+    const nr = row + dr;
+    const nc = col + dc;
+    if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE)
+      neighbors.push(grid[nr][nc]);
+  }
+  return neighbors;
+}
+// Возвращает соседние (вверх, вниз, влево, вправо) клетки — для pathfinding
+export function getNeighbors(row, col) {
+  const neighbors = [];
+  const deltas = [
+    [-1, 0], [1, 0],   // вверх, вниз
+    [0, -1], [0, 1]    // влево, вправо
+  ];
+  for (let [dr, dc] of deltas) {
+    const nr = row + dr;
+    const nc = col + dc;
+    if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE)
+      neighbors.push(grid[nr][nc]);
+  }
+  return neighbors;
+}
+
+
+// Перерисовка при ресайзе или смене ориентации
 window.addEventListener('resize', () => requestAnimationFrame(resizeCanvas));
 window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
 
+// Наблюдатель за сменой темы (dark/light)
 if (canvas) {
   const obs = new MutationObserver(() => drawGrid());
   obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -283,4 +358,6 @@ if (canvas) {
   setTimeout(resizeCanvas, 200);
 }
 
+// ======= СТАРТОВАЯ ИНИЦИАЛИЗАЦИЯ =======
 createGrid();
+resizeCanvas();
