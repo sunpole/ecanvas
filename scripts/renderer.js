@@ -333,7 +333,7 @@ export function drawTowers(towers) {
 
 
 
-export function drawHealthBars(enemies) {
+function drawHealthBars(enemies) {
   if (!ctx) return;
   for (const enemy of enemies) {
     drawEnemyHPBar(enemy.x, enemy.y, enemy.radius * 2, enemy.hp, enemy.maxHp);
