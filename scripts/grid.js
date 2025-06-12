@@ -6,6 +6,9 @@ import { GRID_SIZE, OUTLINE, GRID_TOTAL } from './config.js';
 // ======= СТАРТ И ФИНИШ =======
 import { SPAWN_CELLS, EXIT_CELLS } from './config.js';
 
+// ======= PATHFINDING =======
+import { checkPathExists } from './pathfinding.js';
+
 // ======= ГЛОБАЛЬНЫЕ ДАННЫЕ =======
 export let grid = [];
 let selectedCell = null; // Последняя выбранная пользователем клетка
@@ -107,30 +110,19 @@ export function getNeighbors(row, col) {
   return neighbors;
 }
 
-// ======= ПРОВЕРКА СУЩЕСТВОВАНИЯ ПУТИ (BFS) =======
-function checkPathExists() {
-  if (!SPAWN_CELLS.length || !EXIT_CELLS.length) return false;
 
-  const start = SPAWN_CELLS[0];
-  const end = EXIT_CELLS[0];
-  const visited = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(false));
-  const queue = [[start.row, start.col]];
-  visited[start.row][start.col] = true;
-
-  while (queue.length) {
-    const [r, c] = queue.shift();
-    if (r === end.row && c === end.col) return true; // путь найден
-
-    for (let n of getNeighbors(r, c)) {
-      if ((isCellWalkable(n.row, n.col) || (n.row === end.row && n.col === end.col)) && !visited[n.row][n.col]) {
-        visited[n.row][n.col] = true;
-        queue.push([n.row, n.col]);
-      }
-    }
-  }
-  return false; // нет пути
+// Преобразование координат в индекс одномерного массива
+export function coordsToIndex(row, col) {
+  return row * GRID_SIZE + col;
 }
 
+// Преобразование индекса в координаты
+export function indexToCoords(index) {
+  return {
+    row: Math.floor(index / GRID_SIZE),
+    col: index % GRID_SIZE,
+  };
+}
 
 // ======= ОПРЕДЕЛЕНИЕ ОРИЕНТАЦИИ =======
 function isLandscape() {
