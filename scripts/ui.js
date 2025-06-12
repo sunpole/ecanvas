@@ -1,42 +1,99 @@
 // scripts/ui.js
 
-/**
- * Отрисовать статичный интерфейс (панели, счетчики и пр.)
- */
+// ====== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И DOM ======
+let scoreEl, waveEl, livesEl, msgEl, startPauseBtn, restartBtn, devLabel;
+
+// ====== INIT UI: Инициализация и навешивание обработчиков ======
+export function initUI({ onStartPause, onRestart } = {}) {
+  // Главные элементы
+  scoreEl = document.getElementById('scoreCount');
+  waveEl = document.getElementById('waveCount');
+  livesEl = document.getElementById('livesCount');
+  msgEl = document.getElementById('gameMessage');
+  startPauseBtn = document.getElementById('startPauseBtn');
+  restartBtn = document.getElementById('restartBtn');
+  devLabel = document.getElementById('devLabel');
+
+  // Если нет в index.html, создаём динамически сверху/по центру
+  if (!msgEl) {
+    msgEl = document.createElement('div');
+    msgEl.id = 'gameMessage';
+    msgEl.className = 'game-message';
+    document.body.appendChild(msgEl);
+  }
+
+  // Обработчики старт/пауза/рестарт (если передано в опциях)
+  if (startPauseBtn && onStartPause) {
+    startPauseBtn.onclick = onStartPause;
+  }
+  if (restartBtn && onRestart) {
+    restartBtn.onclick = onRestart;
+  }
+}
+
+// ====== ОТРИСОВКА UI НА КАНВАСЕ (опционально) ======
 export function renderUI(ctx, gameState) {
-  console.log('[UI] renderUI вызвана');
-  // TODO: нарисовать интерфейс на канвасе или DOM на основе gameState
-  // Пример: ctx.fillText(`Счёт: ${gameState.score}`, 20, 30);
+  if (!ctx || !gameState) return;
+  ctx.save();
+  ctx.font = "bold 18px Arial";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = "#fff";
+  ctx.shadowColor = "#0008";
+  ctx.shadowBlur = 1.5;
+  // Пример: счет, волна, жизни в левом верхнем углу
+  ctx.fillText(`Счёт: ${gameState.score ?? 0}`, 15, 12);
+  ctx.fillText(`Волна: ${gameState.wave ?? 1}`, 15, 34);
+  ctx.fillText(`Жизни: ${gameState.lives ?? 5}`, 15, 56);
+  ctx.restore();
 }
 
-/**
- * Обновить данные интерфейса (например, счет или сообщения)
- */
+// ====== ОБНОВИТЬ ДАННЫЕ UI В DOM (быстро) ======
 export function updateUI(gameState) {
-  console.log('[UI] updateUI вызвана');
-  // TODO: обновить внутренние переменные/DOM-элементы интерфейса
+  // Счет
+  if (scoreEl) scoreEl.textContent = `${gameState.score ?? 0}`;
+  // Волна
+  if (waveEl) waveEl.textContent = `${gameState.wave ?? 1}`;
+  // Жизни
+  if (livesEl) livesEl.textContent = `${gameState.lives ?? 5}`;
+  // DEV-мод и прочее по gameState
+  if (devLabel) devLabel.style.display = gameState.devMode ? '' : 'none';
 }
 
-/**
- * Показать всплывающее сообщение
- */
+// ====== ПОКАЗАТЬ ВСПЛЫВАЮЩЕЕ СООБЩЕНИЕ ======
+let hideMsgTimeout = null;
 export function showMessage(text, duration = 2000) {
-  console.log('[UI] showMessage:', text, 'на', duration, 'мс');
-  // TODO: показать сообщение игроку на заданное время
+  if (!msgEl) return;
+  msgEl.textContent = text;
+  msgEl.style.opacity = '1';
+  msgEl.style.pointerEvents = 'auto';
+  msgEl.classList.add('active');
+  clearTimeout(hideMsgTimeout);
+  hideMsgTimeout = setTimeout(() => {
+    msgEl.style.opacity = '0';
+    msgEl.classList.remove('active');
+  }, duration);
 }
 
-/**
- * Обработчик кликов/событий по UI
- */
+// ====== КОНТРОЛЛЕР КЛИКОВ ПО UI ======
 export function handleUIClick(x, y) {
-  console.log('[UI] handleUIClick:', x, y);
-  // TODO: реализовать обработку кликов по кнопкам интерфейса
+  // Пример: обработка клика по кнопкам (или координат canvas)
+  // Можно интегрировать с логикой выбора клетки или действия по canvas
+  // Либо через DOM addEventListener (предпочтительнее)
+  // Тут можно реализовать что делать по координатам клика на canvas,
+  // например, выбирать модуль или запускать установку
 }
 
-/**
- * Инициализация интерфейса (DOM или Canvas)
- */
-export function initUI() {
-  console.log('[UI] initUI вызвана');
-  // TODO: создать DOM-элементы, навесить обработчики и т.п.
+// ====== ВСПОМОГАТЕЛЬНОЕ: ОЧИСТКА UI ======
+export function resetUI() {
+  // Сброс сообщений и счетчиков
+  if (msgEl) msgEl.style.opacity = '0';
+  if (scoreEl) scoreEl.textContent = '0';
+  if (waveEl) waveEl.textContent = '1';
+  if (livesEl) livesEl.textContent = '5';
 }
+
+// ====== ЭКСПОРТЫ ======
+export {
+  // initUI, renderUI, updateUI, showMessage, handleUIClick, resetUI -- уже экспортированы выше
+};
