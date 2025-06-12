@@ -1,12 +1,13 @@
-  <!-- ecanvas/index.html (in main) -->
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>Game Grid Test</title>
-  <!-- Подключение стилей -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="ECANVAS Tower Defense Demo">
+  <meta name="theme-color" content="#242c3a">
+  <title>ECANVAS Game Grid Test</title>
+  <!-- Стили -->
   <link rel="stylesheet" href="styles/variables.css">
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/footer-btns.css">
@@ -23,7 +24,9 @@
   <div class="main-wrapper">
     <div class="top-panel">
       <span id="media-indicator"></span>
-      Инфо-панель
+      Волна <span id="waveCount">1</span>
+      | Счёт <span id="scoreCount">0</span>
+      | Жизни <span id="livesCount">5</span>
       <button class="theme-toggle" id="themeToggle" title="Сменить тему">🌗</button>
     </div>
     <div class="game-field-container">
@@ -34,32 +37,33 @@
     </div>
   </div>
 
-<!-- Блок управления в правом нижем углу -->
-<div class="footer-buttons">
-  <button id="startPauseBtn" class="footer-btn" title="Старт">
-    <span class="footer-btn__icon" id="startPauseIcon">▶️</span>
-    <span class="footer-btn__text" id="startPauseText">Старт</span>
-  </button>
-  <button id="restartBtn" class="footer-btn" title="Сначала">
-    <span class="footer-btn__icon">🔄</span>
-    <span class="footer-btn__text">Сначала</span>
-  </button>
-  <!-- Кнопка DEV заменена на <button> -->
-  <button class="footer-dev" id="footerDevBtn" title="Change-log" type="button">
-    <span class="footer-dev__icon" aria-hidden="true">
-      <svg width="1.15em" height="1.15em" viewBox="0 0 20 20" fill="none">
-        <path d="M14.4 2.1l3.5 3.5c.5.5.5 1.3 0 1.7l-2.9 2.9c.1.8-.1 1.6-.7 2.2L7 17l-2 2-2-2 2-2 6.6-6.6c.6-.6 1.4-.8 2.2-.7l2.9-2.9c.5-.5 1.3-.5 1.8 0z" fill="currentColor"/>
-      </svg>
-    </span>
-    <span class="footer-dev__text">DEV</span>
-  </button>
-</div>
+  <!-- Всплывающее сообщение -->
+  <div id="gameMessage" class="game-message"></div>
+
+  <!-- Кнопки управления -->
+  <div class="footer-buttons">
+    <button id="startPauseBtn" class="footer-btn" title="Старт">
+      <span class="footer-btn__icon" id="startPauseIcon">▶️</span>
+      <span class="footer-btn__text" id="startPauseText">Старт</span>
+    </button>
+    <button id="restartBtn" class="footer-btn" title="Сначала">
+      <span class="footer-btn__icon">🔄</span>
+      <span class="footer-btn__text">Сначала</span>
+    </button>
+    <button class="footer-dev" id="footerDevBtn" title="Change-log" type="button">
+      <span class="footer-dev__icon" aria-hidden="true">
+        <svg width="1.15em" height="1.15em" viewBox="0 0 20 20" fill="none">
+          <path d="M14.4 2.1l3.5 3.5c.5.5.5 1.3 0 1.7l-2.9 2.9c.1.8-.1 1.6-.7 2.2L7 17l-2 2-2-2 2-2 6.6-6.6c.6-.6 1.4-.8 2.2-.7l2.9-2.9c.5-.5 1.3-.5 1.8 0z" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="footer-dev__text">DEV</span>
+    </button>
+  </div>
 
   <!-- Модалка changelog (динамически подгружается) -->
   <div id="modal-changelog-root"></div>
 
-  <!-- Подключение скриптов -->
-  <!-- Основная последовательность из ТЗ -->
+  <!-- Скрипты проекта -->
   <script src="scripts/config.js" type="module"></script>
   <script src="scripts/utils.js" type="module"></script>
   <script src="scripts/grid.js" type="module"></script>
@@ -70,8 +74,6 @@
   <script src="scripts/renderer.js" type="module"></script>
   <script src="scripts/ui.js" type="module"></script>
   <script src="scripts/game-loop.js" type="module"></script>
-
-  <!-- Дополнительные и спецмодули -->
   <script src="scripts/theme.js" type="module"></script>
   <script src="scripts/media-indicator.js" type="module"></script>
   <script src="scripts/modal-changelog.js" type="module"></script>
