@@ -1,3 +1,6 @@
+так все верно?
+
+
 // scripts/grid.js
 
 // ======= НАСТРОЙКИ =======
@@ -5,6 +8,9 @@ import { GRID_SIZE, OUTLINE, GRID_TOTAL } from './config.js';
 
 // ======= СТАРТ И ФИНИШ =======
 import { SPAWN_CELLS, EXIT_CELLS } from './config.js';
+
+// ======= РЕАЛЬНОЕ ПОЛЕ И ФУНКЦИИ =======
+export let grid = [];
 
 // ======= КООРДИНАТЫ =======
 function generateColumnLabels(count) {
@@ -42,6 +48,50 @@ if (!ctx) {
 }
 
 let selectedCell = null;
+
+// Создаёт двумерный массив клеток с координатами и статусом
+export function createGrid(rows = GRID_SIZE, cols = GRID_SIZE) {
+  grid = [];
+  for (let row = 0; row < rows; row++) {
+    let rowArr = [];
+    for (let col = 0; col < cols; col++) {
+      let status = 'empty';
+
+      // Автоматически помечаем SPAWN и EXIT по данным из конфига
+      if (SPAWN_CELLS.some(cell => cell.row === row && cell.col === col)) {
+        status = 'spawn';
+      }
+      if (EXIT_CELLS.some(cell => cell.row === row && cell.col === col)) {
+        status = 'exit';
+      }
+      rowArr.push({
+        row: row,
+        col: col,
+        status: status
+      });
+    }
+    grid.push(rowArr);
+  }
+  console.log("✅ Сетка создана", grid);
+}
+
+// Проверяет, можно ли пройти по клетке
+export function isCellWalkable(row, col) {
+  if (
+    row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE
+  ) return false;
+  const st = grid[row][col]?.status;
+  return (st === 'empty' || st === 'exit');
+}
+
+// Изменяет статус клетки (например, при установке башни)
+export function setCellStatus(row, col, status) {
+  if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) return false;
+  grid[row][col].status = status;
+  // Можно добавить visual update или сообщение в UI
+  return true;
+}
+
 
 function isLandscape() {
   return window.matchMedia("(orientation: landscape)").matches;
@@ -232,3 +282,5 @@ if (canvas) {
   requestAnimationFrame(resizeCanvas);
   setTimeout(resizeCanvas, 200);
 }
+
+createGrid();
