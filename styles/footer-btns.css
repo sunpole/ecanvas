@@ -1,12 +1,11 @@
 /* ecanvas/styles/footer-btns.css (in main) */
 
-/* 
-  Кнопки управления в правом нижнем углу: 
-  "Старт/Пауза", "Сначала", и DEV.
-  Использует переменные из variables.css для цветов, шрифтов и размеров.
+/*
+  Управляющие кнопки в правом нижнем углу ("Старт/Пауза", "Сначала", "DEV").
+  Оформлены в один ряд, адаптивны, используют переменные из variables.css.
 */
 
-/* Контейнер для трех кнопок в ряд */
+/* Контейнер трёх кнопок */
 .footer-buttons {
   position: fixed;
   right: 2vw;
@@ -19,8 +18,9 @@
   font-family: var(--font-ui, system-ui, sans-serif);
 }
 
-/* Универсальный стиль для кнопок "Старт/Пауза" и "Сначала" */
-.footer-btn {
+/* Универсальный стиль для всех кнопок: .footer-btn и .footer-dev */
+.footer-btn,
+.footer-dev {
   display: flex;
   align-items: center;
   gap: 0.38em;
@@ -39,46 +39,65 @@
   transition: background 0.2s, color 0.2s, box-shadow 0.22s, transform 0.1s;
 }
 
-.footer-btn__icon {
+/* Иконка для любой кнопки */
+.footer-btn__icon,
+.footer-dev__icon {
   display: flex;
   align-items: center;
   font-size: 1.28em;
 }
 
-/* Фокус и активное состояние */
+/* Стиль текста для DEV */
+.footer-dev__text { letter-spacing: 0.09em; }
+
+/* Эффекты нажатия/фокуса для всех кнопок */
 .footer-btn:active,
-.footer-btn:focus {
-  box-shadow: var(--footer-btn-shadow-hover, 0 3px 9px #23272e44,0 1px 3px #0002);
+.footer-btn:focus,
+.footer-dev:active,
+.footer-dev:focus {
+  box-shadow: var(--footer-btn-shadow-hover, 0 3px 9px #23272e44, 0 1px 3px #0002);
   outline: 2px solid var(--color-accent, #6488f0);
   transform: scale(var(--footer-btn-scale-active, 0.98));
 }
 .footer-btn:hover,
-.footer-btn:focus {
+.footer-btn:focus,
+.footer-dev:hover,
+.footer-dev:focus {
   background: var(--footer-btn-bg-hover, #353c48);
   color: var(--footer-btn-color-hover, #a2c4fd);
 }
 
-/* Светлая тема: переопределение цветов, границ */
-html[data-theme='light'] .footer-btn {
+/* Border/цвет для светлой темы — все кнопки */
+html[data-theme='light'] .footer-btn,
+html[data-theme='light'] .footer-dev {
   border: 1.2px solid #c6d1da;
   background: var(--footer-btn-bg, #eeeefa);
   color: var(--footer-btn-color, #232733);
 }
 html[data-theme='light'] .footer-btn:hover,
-html[data-theme='light'] .footer-btn:focus {
+html[data-theme='light'] .footer-btn:focus,
+html[data-theme='light'] .footer-dev:hover,
+html[data-theme='light'] .footer-dev:focus {
   background: var(--footer-btn-bg-hover, #dddfe6);
   color: var(--footer-btn-color-hover, #20539f);
 }
 
-/* Адаптация для мобильных устройств */
+/* Специально для DEV-иконки небольшой drop-shadow */
+.footer-dev__icon {
+  filter: drop-shadow(0 6px 12px #0001);
+}
+
+/* Адаптация для мобильных */
 @media (max-width: 650px) {
   .footer-buttons {
     right: 5vw;
     bottom: 3vh;
     gap: 0.3em;
   }
-  .footer-btn {
+  .footer-btn,
+  .footer-dev {
     font-size: 0.99em;
     padding: 8px 14px 8px 11px;
   }
+  .footer-dev__text { letter-spacing: 0.08em; }
 }
