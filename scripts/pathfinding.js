@@ -1,44 +1,59 @@
 // scripts/pathfinding.js
 
 import { grid, getNeighbors, isCellWalkable } from './grid.js';
-import { SPAWN_CELLS, EXIT_CELLS, GRID_SIZE } from './config.js';
+import { SPAWN_CELLS, EXIT_CELLS, GRID_TOTAL } from './config.js';
+import { logDebug } from './utils.js';
 
-// Простой манхэттен — в будущем для A*
+/**
+ * Манхэттенское расстояние для A*
+ */
 export function heuristic(a, b) {
   return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
 }
 
-// ====== BFS: Есть ли вообще путь =======
+/**
+ * Проверяет: есть ли хотя бы один путь от любого SPAWN к любому EXIT
+ * (использует BFS)
+ */
 export function checkPathExists() {
   if (!SPAWN_CELLS.length || !EXIT_CELLS.length) return false;
 
-  const start = SPAWN_CELLS[0];
-  const end = EXIT_CELLS[0];
-  const visited = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(false));
-  const queue = [[start.row, start.col]];
-  visited[start.row][start.col] = true;
-
-  while (queue.length) {
-    const [r, c] = queue.shift();
-    if (r === end.row && c === end.col) return true;
-    for (let n of getNeighbors(r, c)) {
-      if ((isCellWalkable(n.row, n.col) || (n.row === end.row && n.col === end.col)) && !visited[n.row][n.col]) {
-        visited[n.row][n.col] = true;
-        queue.push([n.row, n.col]);
+  // Перебираем все пары SPAWN-EXIT, если для хотя бы одной есть путь — возвращаем true
+  for (const start of SPAWN_CELLS) {
+    for (const end of EXIT_CELLS) {
+      const visited = Array.from({ length: GRID_TOTAL }, () => Array(GRID_TOTAL).fill(false));
+      const queue = [[start.row, start.col]];
+      visited[start.row][start.col] = true;
+      while (queue.length) {
+        const [r, c] = queue.shift();
+        if (r === end.row && c === end.col) {
+          // logDebug('Путь найден BFS', start, end);
+          return true;
+        }
+        for (let n of getNeighbors(r, c)) {
+          if (
+            (isCellWalkable(n.row, n.col) || (n.row === end.row && n.col === end.col)) &&
+            !visited[n.row][n.col]
+          ) {
+            visited[n.row][n.col] = true;
+            queue.push([n.row, n.col]);
+          }
+        }
       }
     }
   }
+  logDebug('ПУТЬ НЕ НАЙДЕН (все SPAWN→EXIT разорваны)');
   return false;
 }
 
-// ====== A* Поиск оптимального пути =======
+/**
+ * Поиск кратчайшего пути (A*) между start и end
+ * Возвращает массив {row, col} или null если путь не существует
+ */
 export function findPath(start, end) {
-  // Open/closed списки A*, поиск кратчайшего маршрута
   const open = [];
   const closed = new Set();
-  const cameFrom = {};
-
-  function nodeKey(row, col) { return row + ',' + col; }
+  const nodeKey = (row, col) => `${row},${col}`;
 
   open.push({
     row: start.row,
@@ -50,11 +65,10 @@ export function findPath(start, end) {
   });
 
   while (open.length > 0) {
-    // Берём лучший по f
     open.sort((a, b) => a.f - b.f);
     const current = open.shift();
     if (current.row === end.row && current.col === end.col) {
-      // Восстанавливаем путь
+      // Восстановление пути:
       const path = [];
       let curr = current;
       while (curr) {
@@ -83,14 +97,21 @@ export function findPath(start, end) {
       }
     }
   }
+  // logDebug('A*: путь не найден', start, end);
   return null;
 }
 
+/**
+ * Быстрый способ узнать, есть ли путь между двумя точками (через A*)
+ */
 export function isPathAvailable(start = SPAWN_CELLS[0], end = EXIT_CELLS[0]) {
   return !!findPath(start, end);
 }
 
+/**
+ * Пересчитать путь для врага (по текущей сетке, обычно после перестановок модулей)
+ */
 export function recalculatePath(enemy) {
-  // enemy должен иметь .row/.col
-  return findPath({row: enemy.row, col: enemy.col}, EXIT_CELLS[0]);
+  // enemy должен иметь .row, .col
+  return findPath({ row: enemy.row, col: enemy.col }, EXIT_CELLS[0]);
 }
