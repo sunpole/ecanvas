@@ -344,12 +344,12 @@ function drawHealthBars(enemies) {
 // ======= ЭКСПОРТ =======
 // Экспорт отдельных функций и default для удобства
 export {
-  drawGrid,
-  resizeCanvas,
-  clearCanvas,
-  drawUpgradeProgressBar,
-  drawEnemyHPBar,
-  drawEnemies,
-  drawTowers,
+ //  drawGrid,
+//  resizeCanvas,
+//   clearCanvas,
+//   drawUpgradeProgressBar,
+//   drawEnemyHPBar,
+//   drawEnemies,
+//   drawTowers,
   drawHealthBars
 };
