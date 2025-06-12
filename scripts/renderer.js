@@ -5,17 +5,22 @@ import { GRID_SIZE, OUTLINE, GRID_TOTAL } from './config.js';
 import { grid, getSelectedCell } from './grid.js';
 import { SPAWN_CELLS, EXIT_CELLS } from './config.js';
 
-// ======= КАНВАС И КОНТЕКСТ =======
-const canvas = document.getElementById('game-canvas');
-if (!canvas) {
-  console.error("❌ Canvas с id='game-canvas' не найден в DOM!");
-}
-const ctx = canvas?.getContext('2d');
-if (canvas && !ctx) {
-  console.error("❌ Не удалось получить контекст 2D для канваса!");
+// ======= CANVAS/CTX PROVIDER (безопасно для SSR/hot reload) =======
+function getCanvasAndCtx() {
+  const canvas = document.getElementById('game-canvas');
+  if (!canvas) {
+    console.error("❌ Canvas с id='game-canvas' не найден в DOM!");
+    return {};
+  }
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.error("❌ Не удалось получить 2D контекст!");
+    return {};
+  }
+  return { canvas, ctx };
 }
 
-// ======= ПРОВАЙДЕРЫ ЦВЕТОВ И ПАНЕЛЕЙ =======
+// ======= КОНФИГИ, ЦВЕТА, ПАНЕЛИ =======
 function getColors() {
   const root = getComputedStyle(document.documentElement);
   return {
@@ -37,21 +42,20 @@ function getPanelsSize() {
   const bottomPanel = document.querySelector('.bottom-panel');
   if (!topPanel) console.warn("⚠️ top-panel не найдена");
   if (!bottomPanel) console.warn("⚠️ bottom-panel не найдена");
-
   if (!isLandscape()) {
     return {
       main: (topPanel?.getBoundingClientRect().height || 0) +
-            (bottomPanel?.getBoundingClientRect().height || 0)
+        (bottomPanel?.getBoundingClientRect().height || 0)
     };
   } else {
     return {
       main: (topPanel?.getBoundingClientRect().width || 0) +
-            (bottomPanel?.getBoundingClientRect().width || 0)
+        (bottomPanel?.getBoundingClientRect().width || 0)
     };
   }
 }
 
-// ======= ВСПОМОГАТЕЛЬНЫЕ: КООРДИНАТЫ/ПОДПИСИ =======
+// ======= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ КООРДИНАТ =======
 function generateColumnLabels(count) {
   let labels = [];
   for (let i = 0; i < count; i++) {
@@ -70,18 +74,32 @@ function generateRowLabels(count) {
 const COORD_LETTERS = generateColumnLabels(GRID_SIZE);
 const COORD_NUMS = generateRowLabels(GRID_SIZE);
 
+// Клетка → пиксели (центр)
+function cellToPixels(row, col, cellSize) {
+  return {
+    x: (col + OUTLINE) * cellSize + cellSize / 2,
+    y: (row + OUTLINE) * cellSize + cellSize / 2
+  };
+}
+// Клетка → пиксели (верхний левый угол)
+function cellToTopLeft(row, col, cellSize) {
+  return {
+    x: (col + OUTLINE) * cellSize,
+    y: (row + OUTLINE) * cellSize
+  };
+}
+
 // ======= CANVAS CLEAR =======
-export function clearCanvas() {
+function clearCanvas() {
+  const { canvas, ctx } = getCanvasAndCtx();
   if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 // ======= DRAW GRID =======
-export function drawGrid() {
-  if (!ctx) {
-    console.error("❌ drawGrid: контекст не готов");
-    return;
-  }
+function drawGrid() {
+  const { canvas, ctx } = getCanvasAndCtx();
+  if (!ctx || !canvas) return;
   const size = parseFloat(canvas.style.width) || 300;
   const cellSize = size / GRID_TOTAL;
   const C = getColors();
@@ -147,16 +165,12 @@ export function drawGrid() {
     ctx.fillText(COORD_NUMS[row - 1] || '', cellSize / 2, y);
     ctx.fillText(COORD_NUMS[row - 1] || '', (GRID_TOTAL - 1) * cellSize + cellSize / 2, y);
   }
-
-  console.log("🟦 drawGrid: сетка отрисована");
 }
 
 // ======= RESIZE CANVAS =======
-export function resizeCanvas() {
-  if (!canvas || !ctx) {
-    console.warn("⚠️ resizeCanvas — canvas или контекст не готовы");
-    return;
-  }
+function resizeCanvas() {
+  const { canvas, ctx } = getCanvasAndCtx();
+  if (!canvas || !ctx) return;
   const w = window.innerWidth;
   const h = window.innerHeight;
   const panels = getPanelsSize();
@@ -180,18 +194,11 @@ export function resizeCanvas() {
   ctx.scale(dpr, dpr);
 
   drawGrid();
-  console.log("🟩 resizeCanvas: Canvas изменён");
 }
 
 // ======= PROGRESS BAR (АПГРЕЙД БАШНИ) =======
-/**
- * Прогресс-бар улучшения (над башней) с таймером
- * x, y — координаты верхнего левого угла клетки (в пикселях)
- * cellSize — размер клетки (пиксели)
- * totalSteps — всего секунд
- * doneSteps — сколько прошло секунд
- */
-export function drawUpgradeProgressBar(x, y, cellSize, totalSteps, doneSteps) {
+function drawUpgradeProgressBar(x, y, cellSize, totalSteps, doneSteps) {
+  const { ctx } = getCanvasAndCtx();
   if (!ctx) return;
   const barWidth = cellSize * 0.8;
   const barHeight = cellSize * 0.18;
@@ -210,16 +217,16 @@ export function drawUpgradeProgressBar(x, y, cellSize, totalSteps, doneSteps) {
   ctx.fillStyle = "#2db3fd";
   ctx.fillRect(barX, barY, barWidth * progress, barHeight);
 
-  // Не сделанная часть
+  // Остаток
   ctx.fillStyle = "#ffe066";
   ctx.fillRect(barX + barWidth * progress, barY, barWidth * (1 - progress), barHeight);
 
-  // Бордер
+  // Рамка
   ctx.strokeStyle = "#174fa6";
   ctx.lineWidth = 2;
   ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-  // Секунды поверх
+  // Цифра (сек.)
   const secondsLeft = Math.max(0, totalSteps - doneSteps);
   ctx.fillStyle = "#fff";
   ctx.font = `bold ${Math.floor(barHeight * 0.9)}px Arial`;
@@ -229,24 +236,17 @@ export function drawUpgradeProgressBar(x, y, cellSize, totalSteps, doneSteps) {
   ctx.shadowBlur = 3;
   ctx.fillText(secondsLeft, barX + barWidth / 2, barY + barHeight / 2);
   ctx.shadowBlur = 0;
-
-  console.log("🟨 Прогресс улучшения на (" + x + "," + y + "):", doneSteps, "/", totalSteps);
 }
 
 // ======= HP BAR ДЛЯ ВРАГА =======
-/**
- * HP-бар и цифровое значение для врага.
- * x, y — позиция врага (центр), width — ширина спрайта врага
- * maxHp, hp — значения HP.
- */
-export function drawEnemyHPBar(x, y, width, hp, maxHp) {
+function drawEnemyHPBar(x, y, width, hp, maxHp) {
+  const { ctx } = getCanvasAndCtx();
   if (!ctx) return;
   const barWidth = width * 0.9;
   const barHeight = Math.max(6, Math.floor(width * 0.15));
   const barX = x - barWidth / 2;
   const barY = y - width / 2 - barHeight - 6; // Над врагом
 
-  // Чёрный фон
   ctx.save();
   ctx.globalAlpha = 0.78;
   ctx.fillStyle = "#181f25";
@@ -258,98 +258,91 @@ export function drawEnemyHPBar(x, y, width, hp, maxHp) {
   ctx.fillStyle = (ratio > 0.5) ? "#27f53c" : (ratio > 0.25) ? "#ffe066" : "#ff236e";
   ctx.fillRect(barX, barY, barWidth * ratio, barHeight);
 
-  // Рамка
   ctx.strokeStyle = "#154c1b";
   ctx.lineWidth = 1.3;
   ctx.strokeRect(barX, barY, barWidth, barHeight);
 
-  // Текст — HP/MaxHP (поверх)
+  // Текст
   ctx.fillStyle = "#fff";
   ctx.font = `bold ${Math.floor(barHeight * 0.95)}px Arial`;
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
   ctx.shadowColor = "rgba(0,0,0,0.7)";
   ctx.shadowBlur = 2;
-  ctx.fillText(`${hp}/${maxHp}`, barX + barWidth - 3, barY + barHeight / 2);
+  ctx.fillText(`${Math.ceil(hp)}/${maxHp}`, barX + barWidth - 3, barY + barHeight / 2);
   ctx.shadowBlur = 0;
-
-  // Debug
-  console.log(`❤️ HP-бaр врага (${x},${y}): ${hp}/${maxHp}`);
 }
 
-// ======= DRAW ENEMIES (ПРИМЕР) =======
-/**
- * enemies: [{ x, y, radius, color, hp, maxHp }]
- * В реальной игре берётся из enemy.js!
- */
-export function drawEnemies(enemies) {
-  if (!ctx) return;
-  for (const enemy of enemies) {
-    // Спрайт/кружок
+// ======= DRAW ENEMIES =======
+function drawEnemies(orders) {
+  const { ctx, canvas } = getCanvasAndCtx();
+  if (!ctx || !canvas) return;
+  const size = parseFloat(canvas.style.width) || 300;
+  const cellSize = size / GRID_TOTAL;
+  for (const order of orders) {
+    if (order.dead) continue;
+    const { x, y } = cellToPixels(order.row, order.col, cellSize);
+    // Кружок врага
     ctx.save();
     ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, 2 * Math.PI, false);
-    ctx.fillStyle = enemy.color || '#a31322';
+    ctx.arc(x, y, cellSize * 0.34, 0, 2 * Math.PI, false);
+    ctx.fillStyle = order.color || "#2e90ff";
     ctx.shadowColor = "#000";
-    ctx.shadowBlur = 6;
+    ctx.shadowBlur = 7;
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // HP бар и число
-    drawEnemyHPBar(enemy.x, enemy.y, enemy.radius * 2, enemy.hp, enemy.maxHp);
-  }
-
-  console.log("👾 drawEnemies: всего врагов =", enemies.length);
-}
-
-// ======= DRAW TOWERS (ПРИМЕР) =======
-/**
- * towers: [{ x, y, size, color, upgTotal, upgDone }]
- * x, y - верхний левый угол!
- */
-export function drawTowers(towers) {
-  if (!ctx) return;
-  for (const tower of towers) {
-    // Башня — прямоугольник/плитка
-    ctx.save();
-    ctx.fillStyle = tower.color || '#337ad9';
-    ctx.fillRect(tower.x, tower.y, tower.size, tower.size);
-
-    // Обводка
-    ctx.strokeStyle = '#283042';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(tower.x, tower.y, tower.size, tower.size);
-    ctx.restore();
-
-    // Индикатор улучшения (если процесс идёт)
-    if (tower.upgTotal && tower.upgDone < tower.upgTotal) {
-      drawUpgradeProgressBar(tower.x, tower.y, tower.size, tower.upgTotal, tower.upgDone);
+    // HP (над головой)
+    if (order.hp < order.maxHp) {
+      drawEnemyHPBar(x, y, cellSize * 0.78, order.hp, order.maxHp);
     }
   }
-
-  console.log("🏰 drawTowers: башен =", towers.length);
 }
 
+// ======= DRAW TOWERS =======
+function drawTowers(towers) {
+  const { ctx, canvas } = getCanvasAndCtx();
+  if (!ctx || !canvas || !Array.isArray(towers)) return;
+  const size = parseFloat(canvas.style.width) || 300;
+  const cellSize = size / GRID_TOTAL;
+  for (const tower of towers) {
+    const { x, y } = cellToTopLeft(tower.row, tower.col, cellSize);
+    ctx.save();
+    ctx.fillStyle = tower.color || '#337ad9';
+    ctx.fillRect(x, y, cellSize, cellSize);
+    ctx.strokeStyle = '#283042';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, cellSize, cellSize);
+    ctx.restore();
 
-
-function drawHealthBars(enemies) {
-  if (!ctx) return;
-  for (const enemy of enemies) {
-    drawEnemyHPBar(enemy.x, enemy.y, enemy.radius * 2, enemy.hp, enemy.maxHp);
+    if (tower.upgTotal && tower.upgDone < tower.upgTotal) {
+      drawUpgradeProgressBar(x, y, cellSize, tower.upgTotal, tower.upgDone);
+    }
   }
-  console.log("🩸 drawHealthBars: отрисовано HP-баров:", enemies.length);
 }
 
-// ======= ЭКСПОРТ =======
-// Экспорт отдельных функций и default для удобства
+// ======= МАСТЕР-РЕНДЕР СЦЕНЫ (для game-loop/renderAll) =======
+/**
+ * Рисует ВСЕ (сетку, башни, враги) — вызывать из game-loop/renderAll
+ * @param {Object[]} orders - массив врагов (orders.js)
+ * @param {Object[]} towers - массив башен (если есть)
+ */
+function renderScene(orders, towers = []) {
+  clearCanvas();
+  drawGrid();
+  if (Array.isArray(towers)) drawTowers(towers);
+  drawEnemies(orders);
+}
+
+// ======= ЭКСПОРТЫ (все в конце, без дублирования) =======
 export {
- //  drawGrid,
-//  resizeCanvas,
-//   clearCanvas,
-//   drawUpgradeProgressBar,
-//   drawEnemyHPBar,
-//   drawEnemies,
-//   drawTowers,
-  drawHealthBars
+  clearCanvas,
+  drawGrid,
+  resizeCanvas,
+  drawUpgradeProgressBar,
+  drawEnemyHPBar,
+  drawEnemies,
+  drawTowers,
+  renderScene
 };
