@@ -353,14 +353,3 @@ export {
   drawTowers,
   drawHealthBars
 };
-
-export default {
-  drawGrid,
-  resizeCanvas,
-  clearCanvas,
-  drawUpgradeProgressBar,
-  drawEnemyHPBar,
-  drawEnemies,
-  drawTowers,
-  drawHealthBars
-};
