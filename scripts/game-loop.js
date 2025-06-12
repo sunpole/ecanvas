@@ -1,8 +1,9 @@
 // scripts/game-loop.js
 
 import { orders, updateOrderPosition, renderOrder, cleanupDeadOrders } from './orders.js';
-import { loadOrderPresets, startWave, tickSpawner, isWaveFinished } from './spawner.js';
-import { renderGrid } from './renderer.js';
+import { loadOrderPresets, startWave, isWaveFinished } from './spawner.js';
+import { drawGrid } from './renderer.js';
+import { towers, renderTower } from './towers.js';   // towers.js должен экспортировать этот набор
 
 let lastTimestamp = 0;
 
@@ -15,14 +16,14 @@ export function gameLoop(timestamp) {
 
   updateAll(delta);
   renderAll();
-  requestAnimationFrame(gameLoop);
 
-  // Проверяем окончание волны (простая демонстрация)
   if (isWaveFinished()) {
-    // Тут можно либо стартовать следующую волну, либо остановить, показать экран победы и т.д.
-    // Например:
-    // startWave(следующая_волна);
-    // или пауза, диалог, ...
+    // place to handle end of wave: auto-next, modal, victory, etc.
+    // Например: startWave(следующая_волна); или показать modal("Волна завершена!")
+    // Можно для разработки просто паузу:
+    // return; // или не вызывать requestAnimationFrame для паузы
+  } else {
+    requestAnimationFrame(gameLoop);
   }
 }
 
@@ -30,25 +31,32 @@ export function gameLoop(timestamp) {
  * Обновление состояния всех объектов за кадр
  */
 export function updateAll(delta) {
-  // Спауним новых врагов (tickSpawner работает через setInterval, но можешь сделать и тут)
-  // tickSpawner(); НЕ ОБЯЗАТЕЛЬНО если уже setInterval в spawner.js
-
-  // Двигаем всех живых orders
+  // Двигаем всех живых врагов (orders)
   for (const order of orders) {
     if (!order.dead) updateOrderPosition(order, delta);
   }
-  // Удаляем "трупы"
   cleanupDeadOrders();
+
+  // Здесь можно добавить апдейт для башен, если требуется (например, для зарядки, пуль или анимаций)
+  // for (const tower of towers) { updateTower(tower, delta); }
 }
 
 /**
  * Отрисовка всех объектов за кадр
  */
 export function renderAll() {
-  // Сначала рендерим сетку (поле)
-  renderGrid();
+  drawGrid();
 
-  // Потом все активные заказы (враги)
+  // Отрисовать башни, если есть towers.js и renderTower:
+  if (typeof renderTower === "function" && Array.isArray(towers)) {
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    for (const tower of towers) {
+      renderTower(tower, ctx);
+    }
+  }
+
+  // Отрисовать врагов
   const canvas = document.getElementById('game-canvas');
   const ctx = canvas.getContext('2d');
   for (const order of orders) {
@@ -63,13 +71,11 @@ export async function startGame() {
   console.log('[GAME-LOOP] startGame — игра запущена');
   await loadOrderPresets();
 
-  // Можно выводить уровень, UI, и т.д.
-
-  // Запуск первой волны — простая заглушка на демонстрацию:
+  // Запуск первой волны
   startWave({
     orders: [
       { id: 'vip', count: 1 }
-      // здесь потом можешь добавлять любые другие виды и количества order'ов
+      // добавь другие типы врагов при необходимости
     ]
   });
 
@@ -80,6 +86,6 @@ export async function startGame() {
  * Пауза игры
  */
 export function pauseGame() {
-  // Для MVP можно просто ничего не делать
+  // Пока только заглушка
   console.log('[GAME-LOOP] pauseGame — игра на паузе');
 }
