@@ -1,0 +1,84 @@
+/* ecanvas/styles/footer-btns.css (in main) */
+
+/* 
+  Кнопки управления в правом нижнем углу: 
+  "Старт/Пауза", "Сначала", и DEV.
+  Использует переменные из variables.css для цветов, шрифтов и размеров.
+*/
+
+/* Контейнер для трех кнопок в ряд */
+.footer-buttons {
+  position: fixed;
+  right: 2vw;
+  bottom: 2vh;
+  z-index: 4020;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--footer-btn-gap, 0.55em);
+  font-family: var(--font-ui, system-ui, sans-serif);
+}
+
+/* Универсальный стиль для кнопок "Старт/Пауза" и "Сначала" */
+.footer-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.38em;
+  font-size: var(--footer-btn-font, 1.04em);
+  font-weight: 700;
+  padding: var(--footer-btn-padding, 11px 24px 11px 17px);
+  border-radius: var(--footer-btn-radius, 999px);
+  box-shadow: var(--footer-btn-shadow, 0 6px 32px #0001,0 2px 8px #0003);
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  outline: none;
+  letter-spacing: .09em;
+  background: var(--footer-btn-bg, #23272e);
+  color: var(--footer-btn-color, #fff);
+  transition: background 0.2s, color 0.2s, box-shadow 0.22s, transform 0.1s;
+}
+
+.footer-btn__icon {
+  display: flex;
+  align-items: center;
+  font-size: 1.28em;
+}
+
+/* Фокус и активное состояние */
+.footer-btn:active,
+.footer-btn:focus {
+  box-shadow: var(--footer-btn-shadow-hover, 0 3px 9px #23272e44,0 1px 3px #0002);
+  outline: 2px solid var(--color-accent, #6488f0);
+  transform: scale(var(--footer-btn-scale-active, 0.98));
+}
+.footer-btn:hover,
+.footer-btn:focus {
+  background: var(--footer-btn-bg-hover, #353c48);
+  color: var(--footer-btn-color-hover, #a2c4fd);
+}
+
+/* Светлая тема: переопределение цветов, границ */
+html[data-theme='light'] .footer-btn {
+  border: 1.2px solid #c6d1da;
+  background: var(--footer-btn-bg, #eeeefa);
+  color: var(--footer-btn-color, #232733);
+}
+html[data-theme='light'] .footer-btn:hover,
+html[data-theme='light'] .footer-btn:focus {
+  background: var(--footer-btn-bg-hover, #dddfe6);
+  color: var(--footer-btn-color-hover, #20539f);
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 650px) {
+  .footer-buttons {
+    right: 5vw;
+    bottom: 3vh;
+    gap: 0.3em;
+  }
+  .footer-btn {
+    font-size: 0.99em;
+    padding: 8px 14px 8px 11px;
+  }
+}
