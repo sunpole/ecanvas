@@ -107,6 +107,31 @@ export function getNeighbors(row, col) {
   return neighbors;
 }
 
+// ======= ПРОВЕРКА СУЩЕСТВОВАНИЯ ПУТИ (BFS) =======
+function checkPathExists() {
+  if (!SPAWN_CELLS.length || !EXIT_CELLS.length) return false;
+
+  const start = SPAWN_CELLS[0];
+  const end = EXIT_CELLS[0];
+  const visited = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(false));
+  const queue = [[start.row, start.col]];
+  visited[start.row][start.col] = true;
+
+  while (queue.length) {
+    const [r, c] = queue.shift();
+    if (r === end.row && c === end.col) return true; // путь найден
+
+    for (let n of getNeighbors(r, c)) {
+      if ((isCellWalkable(n.row, n.col) || (n.row === end.row && n.col === end.col)) && !visited[n.row][n.col]) {
+        visited[n.row][n.col] = true;
+        queue.push([n.row, n.col]);
+      }
+    }
+  }
+  return false; // нет пути
+}
+
+
 // ======= ОПРЕДЕЛЕНИЕ ОРИЕНТАЦИИ =======
 function isLandscape() {
   return window.matchMedia("(orientation: landscape)").matches;
