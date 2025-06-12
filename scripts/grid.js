@@ -276,25 +276,23 @@ function handleClick(evt) {
   const cell = getCellByCoords(evt);
   if (!cell) return;
 
-  // Пример смены статуса по клику: поставить башню/снять башню
   const currentStatus = grid[cell.row][cell.col].status;
   const newStatus = currentStatus === 'empty' ? 'tower' : 'empty';
 
-  // >>> ВАЛИДАЦИЯ. Например, нельзя ставить на старт/финиш
+  // Нельзя ставить башню на стартовую или финишную клетку
   if (currentStatus === 'spawn' || currentStatus === 'exit') return;
 
-  // (Здесь можно добавить проверку Block Path, если есть checkPathExists)
-  // if (newStatus === 'tower') {
-  //   setCellStatus(cell.row, cell.col, newStatus);
-  //   const pathExists = checkPathExists(); // реализовать по нужде
-  //   if (!pathExists) {
-  //     setCellStatus(cell.row, cell.col, currentStatus);
-  //     alert('Нельзя блокировать путь полностью!');
-  //     return;
-  //   }
-  // } else {
-      setCellStatus(cell.row, cell.col, newStatus);
-  // }
+  if (newStatus === 'tower') {
+    setCellStatus(cell.row, cell.col, newStatus);
+    const pathExists = checkPathExists();
+    if (!pathExists) {
+      setCellStatus(cell.row, cell.col, currentStatus);
+      alert('Нельзя блокировать путь полностью!');
+      return;
+    }
+  } else {
+    setCellStatus(cell.row, cell.col, newStatus);
+  }
 
   selectedCell = cell;
   drawGrid();
