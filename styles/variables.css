@@ -1,8 +1,5 @@
-/* ecanvas/styles/variables.css (in main) */
-
 /* ===== Базовые переменные для тёмной темы (default) ===== */
 :root {
-  /* Основные цвета интерфейса */
   --color-bg: #23272e;
   --color-panel: #181b21;
   --color-panel-alt: #23272e;
@@ -15,7 +12,12 @@
   --color-link: #8cb3fc;
   --color-link-hover: #5476ac;
 
-  /* Универсальный шрифт для UI */
+  --color-error: #ff486c;
+  --color-success: #53e34e;
+  --color-warning: #ffe066;
+
+  --shadow-main: 0 2px 12px #0008;
+
   --font-ui: 'Montserrat', 'Segoe UI', Arial, sans-serif;
 
   /* ===== КНОПКИ (footer, DEV) ===== */
@@ -26,12 +28,12 @@
   --footer-btn-font: 1.04em;
   --footer-btn-gap: 0.55em;
   --footer-btn-scale-active: 0.98;
-
-  /* Цвета для кнопок и DEV — тёмная тема */
   --footer-btn-bg: #23272e;
   --footer-btn-bg-hover: #353c48;
+  --footer-btn-bg-disabled: #6a768d;
   --footer-btn-color: #fff;
   --footer-btn-color-hover: #a2c4fd;
+  --footer-btn-color-disabled: #d2dae7;
 }
 
 /* ===== Переопределение для светлой темы ===== */
@@ -48,9 +50,17 @@ html[data-theme='light'] {
   --color-link: #1951a5;
   --color-link-hover: #11336b;
 
+  --color-error: #ea3856;
+  --color-success: #48c43d;
+  --color-warning: #ffe066;
+
+  --shadow-main: 0 2px 12px #20539f15;
+
   /* Кнопки и DEV — светлая тема */
   --footer-btn-bg: #eeeefa;
   --footer-btn-bg-hover: #dddfe6;
+  --footer-btn-bg-disabled: #bcc7d4;
   --footer-btn-color: #232733;
   --footer-btn-color-hover: #20539f;
+  --footer-btn-color-disabled: #789;
 }
