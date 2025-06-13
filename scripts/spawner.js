@@ -3,18 +3,20 @@
 import { spawnOrder, orders } from './orders.js';
 import { SPAWN_CELLS, EXIT_CELLS } from './config.js';
 
-let PRESETS = {};          // Хранилище шаблонов врагов
-let orderQueue = [];       // Очередь врагов для текущей волны
+let PRESETS = {};          // Хранилище шаблонов врагов (пресетов)
+let orderQueue = [];       // Очередь врагов для текущей волны (ID врагов)
 let currentWave = null;
-let spawnIntervalMs = 1000;
+const spawnIntervalMs = 1000;
 let spawnTimer = null;
 
 /**
  * Загрузить пресеты врагов из data/orders.json
  * Вызывать обязательно ДО запуска волн!
+ * @returns {Promise<void>}
  */
 export async function loadOrderPresets() {
   try {
+    console.log('[SPAWNER] Начинается загрузка пресетов врагов из data/orders.json');
     const response = await fetch('data/orders.json');
     if (!response.ok) {
       console.error(`[SPAWNER] Ошибка загрузки orders.json: ${response.status} ${response.statusText}`);
@@ -22,9 +24,10 @@ export async function loadOrderPresets() {
     }
     const json = await response.json();
     if (!json.orders || !Array.isArray(json.orders)) {
-      console.error('[SPAWNER] Некорректный формат orders.json: отсутствует поле orders');
+      console.error('[SPAWNER] Некорректный формат orders.json: отсутствует поле orders или оно не массив');
       return;
     }
+    PRESETS = {}; // Очистка перед загрузкой
     for (const order of json.orders) {
       if (!order.id) {
         console.warn('[SPAWNER] Найден пресет без id:', order);
@@ -32,7 +35,7 @@ export async function loadOrderPresets() {
       }
       PRESETS[order.id] = order;
     }
-    console.log('[SPAWNER] Пресеты врагов загружены:', Object.keys(PRESETS));
+    console.log('[SPAWNER] Пресеты врагов успешно загружены:', Object.keys(PRESETS));
   } catch (error) {
     console.error('[SPAWNER] Ошибка при загрузке пресетов врагов:', error);
   }
@@ -52,7 +55,7 @@ export function getPresetById(id) {
  * @param {object} waveData - объект волны с массивом orders [{id, count}, ...]
  */
 export function startWave(waveData) {
-  if (!waveData || !waveData.orders) {
+  if (!waveData || !waveData.orders || !Array.isArray(waveData.orders)) {
     console.error('[SPAWNER] startWave: некорректные данные волны', waveData);
     return;
   }
@@ -74,7 +77,7 @@ export function startWave(waveData) {
 export function queueOrders(waveData) {
   const result = [];
   waveData.orders.forEach(orderGroup => {
-    if (!orderGroup.id || typeof orderGroup.count !== 'number') {
+    if (!orderGroup.id || typeof orderGroup.count !== 'number' || orderGroup.count <= 0) {
       console.warn('[SPAWNER] Некорректная группа врагов в волне:', orderGroup);
       return;
     }
@@ -98,8 +101,13 @@ export function tickSpawner() {
     console.log('[SPAWNER] Волна завершена, спавн остановлен');
     return;
   }
-  
-  // Берём первую спавн-клетку и первую exit-клетку (можно расширить логику позже)
+
+  if (!SPAWN_CELLS.length || !EXIT_CELLS.length) {
+    console.error('[SPAWNER] Ошибка: отсутствуют координаты SPAWN_CELLS или EXIT_CELLS');
+    return;
+  }
+
+  // Берём первую спавн-клетку и первую exit-клетку (в дальнейшем можно улучшить логику)
   const spawnCell = SPAWN_CELLS[0];
   const exitCell = EXIT_CELLS[0];
 
@@ -111,7 +119,7 @@ export function tickSpawner() {
     return;
   }
 
-  // Добавляем координаты спавна и выхода
+  // Добавляем координаты спавна и выхода в параметры
   spawnOrder({
     ...preset,
     spawn: { row: spawnCell.row, col: spawnCell.col },
@@ -126,6 +134,8 @@ export function tickSpawner() {
  * @returns {boolean}
  */
 export function isWaveFinished() {
+  // orderQueue пуст — спавн врагов окончен
+  // orders — глобальный массив всех врагов, проверяем, все ли мертвы
   const finished = orderQueue.length === 0 && orders.every(o => o.dead);
   console.log(`[SPAWNER] Проверка завершения волны: ${finished ? 'Завершена' : 'Ещё идёт'}`);
   return finished;
