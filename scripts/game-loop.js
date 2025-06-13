@@ -3,7 +3,7 @@
 import { orders, updateOrderPosition, renderOrder, cleanupDeadOrders } from './orders.js';
 import { loadOrderPresets, startWave, isWaveFinished } from './spawner.js';
 import { drawGrid } from './renderer.js';
-import { towers, renderTower } from './towers.js';   // towers.js должен экспортировать этот набор
+import { modules, renderModule } from './modules.js';   // towers.js (должен быть modules.js) должен экспортировать этот набор
 
 let lastTimestamp = 0;
 
