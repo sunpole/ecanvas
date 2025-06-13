@@ -1,42 +1,61 @@
 // scripts/utils.js
 
 /**
- * Система запускается как модуль!
- * Все импорты работают как import {...} from './utils.js'
+ * Утилиты и глобальный логгер для проекта
+ * Работает как ES-модуль: import { ... } from './utils.js'
  */
 
-// ====== ГЛОБАЛЬНЫЙ ДЕБАГ-ФЛАГ ======
+// ========== ГЛОБАЛЬНЫЕ НАСТРОЙКИ ==========
+
+/**
+ * Глобальный флаг отладки — можно переопределить из config.js
+ */
 export let DEBUG = true;
 
-// ====== НАСТРОЙКА ДЕБАГ-РЕЖИМА ======
+// ========== НАСТРОЙКА И ЛОГГИРОВАНИЕ ==========
+
+/**
+ * Установить debug-режим (true/false)
+ */
 export function setDebug(value) {
   DEBUG = Boolean(value);
-  logInfo(`DEBUG режим ${DEBUG ? 'включен' : 'отключен'}`);
+  logInfo(`DEBUG режим ${DEBUG ? 'включён' : 'отключён'}`);
 }
 
-// ====== ДЕБАГ-ЛОГИРОВАНИЕ ======
+/**
+ * Отладочный лог (работает только если DEBUG=true)
+ */
 export function logDebug(...msg) {
   if (DEBUG) {
     console.log('%c[DEBUG]', 'color:#2e90ff;font-weight:bold', ...msg);
   }
 }
 
+/**
+ * Информационный лог
+ */
 export function logInfo(...msg) {
   console.log('%c[INFO]', 'color:#00bfa6;font-weight:bold', ...msg);
 }
 
+/**
+ * Предупреждение
+ */
 export function logWarn(...msg) {
   console.warn('%c[WARN]', 'color:orange;font-weight:bold', ...msg);
 }
 
+/**
+ * Ошибка
+ */
 export function logError(...msg) {
   console.error('%c[ERROR]', 'color:red;font-weight:bold', ...msg);
 }
 
-// ====== МАТЕМАТИЧЕСКИЕ УТИЛИТЫ ======
+// ========== МАТЕМАТИКА ==========
 
 /**
- * Случайное целое от min до max (включительно)
+ * Случайное целое число от min до max (включительно)
  */
 export function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -57,16 +76,16 @@ export function distance(x1, y1, x2, y2) {
 }
 
 /**
- * Линейная интерполяция (lerp)
+ * Линейная интерполяция
  */
 export function lerp(a, b, t) {
   return a + (b - a) * t;
 }
 
-// ====== УТИЛИТЫ ДЛЯ РАБОТЫ С МАССИВАМИ ======
+// ========== МАССИВЫ ==========
 
 /**
- * Перемешивание массива (копия)
+ * Перемешивание массива (возвращает копию)
  */
 export function shuffle(array) {
   const arr = array.slice();
@@ -77,16 +96,16 @@ export function shuffle(array) {
   return arr;
 }
 
-// ====== УТИЛИТЫ ДЛЯ ОБЪЕКТОВ И ИДЕНТИФИКАТОРОВ ======
+// ========== ОБЪЕКТЫ ==========
 
 /**
- * Глубокое клонирование объекта (без функций и нестандартных типов)
+ * Глубокое клонирование простого объекта (без методов, дат и т.д.)
  */
 export function deepClone(obj) {
   try {
-    return structuredClone(obj); // Современный метод, если доступен
-  } catch {
-    logWarn('structuredClone недоступен, используется JSON fallback');
+    return structuredClone(obj);
+  } catch (e) {
+    logWarn('structuredClone недоступен, fallback на JSON', e);
     return JSON.parse(JSON.stringify(obj));
   }
 }
@@ -98,10 +117,11 @@ export function generateId(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 6)}${Date.now().toString(36)}`;
 }
 
-// ====== УТИЛИТЫ ДЛЯ КООРДИНАТ И ПРЯМОУГОЛЬНИКОВ ======
+// ========== КООРДИНАТЫ / ГЕОМЕТРИЯ ==========
 
 /**
- * Попадает ли точка внутрь прямоугольника
+ * Проверка попадания точки в прямоугольник
+ * rect: { x, y, width, height }
  */
 export function pointInRect(x, y, rect) {
   return (
@@ -113,16 +133,16 @@ export function pointInRect(x, y, rect) {
 }
 
 /**
- * Сравнение координат клеток (row/col)
+ * Сравнение координат клеток {row, col}
  */
 export function coordsEqual(a, b) {
-  return a && b && a.row === b.row && a.col === b.col;
+  return a?.row === b?.row && a?.col === b?.col;
 }
 
-// ====== ДРУГИЕ ПОЛЕЗНЫЕ УТИЛИТЫ ======
+// ========== ПРОЧЕЕ ==========
 
 /**
- * Формат времени (мм:сс) из миллисекунд
+ * Форматирование времени в mm:ss
  */
 export function formatTime(ms) {
   const total = Math.floor(ms / 1000);
@@ -132,11 +152,11 @@ export function formatTime(ms) {
 }
 
 /**
- * Задержка (await sleep)
+ * Пауза (await sleep)
  */
 export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ====== АВТОЗАПУСК ДЕБАГ-ЛОГА ПРИ ИМПОРТЕ ======
-logDebug('utils.js загружен. DEBUG =', DEBUG);
+// ========== АВТОПРОВЕРКА ПРИ ИМПОРТЕ ==========
+logDebug('✅ utils.js загружен. DEBUG =', DEBUG);
