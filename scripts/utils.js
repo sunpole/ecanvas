@@ -1,44 +1,107 @@
 // scripts/utils.js
 
 /**
- * Система запускается как модуль! Все импорты работают как import {...} from './utils.js'
+ * Система запускается как модуль!
+ * Все импорты работают как import {...} from './utils.js'
  */
 
-/**
- * Дебаг-флаг: глобально включает/выключает вывод.
- * Можно переопределять из config.js при необходимости.
- */
+// ====== ГЛОБАЛЬНЫЙ ДЕБАГ-ФЛАГ ======
 export let DEBUG = true;
 
-/**
- * Включает или выключает режим отладки логированием.
- * Используй из других модулей: import { setDebug } from './utils.js'
- */
+// ====== НАСТРОЙКА ДЕБАГ-РЕЖИМА ======
 export function setDebug(value) {
   DEBUG = Boolean(value);
+  logInfo(`DEBUG режим ${DEBUG ? 'включен' : 'отключен'}`);
 }
 
-/**
- * Логгирование важных этапов, если DEBUG=true.
- * Всегда прокидывай важные параметры для быстрых разборов.
- */
+// ====== ДЕБАГ-ЛОГИРОВАНИЕ ======
 export function logDebug(...msg) {
   if (DEBUG) {
-    // Красочный тег для лёгкой фильтрации в консоли
     console.log('%c[DEBUG]', 'color:#2e90ff;font-weight:bold', ...msg);
   }
 }
 
+export function logInfo(...msg) {
+  console.log('%c[INFO]', 'color:#00bfa6;font-weight:bold', ...msg);
+}
+
+export function logWarn(...msg) {
+  console.warn('%c[WARN]', 'color:orange;font-weight:bold', ...msg);
+}
+
+export function logError(...msg) {
+  console.error('%c[ERROR]', 'color:red;font-weight:bold', ...msg);
+}
+
+// ====== МАТЕМАТИЧЕСКИЕ УТИЛИТЫ ======
+
 /**
- * Возвращает случайное целое между min и max (включительно)
+ * Случайное целое от min до max (включительно)
  */
 export function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /**
- * Проверяет, попадет ли точка (x, y) внутрь прямоугольника rect
- * rect: { x, y, width, height }
+ * Ограничение значения между min и max
+ */
+export function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Расстояние между двумя точками
+ */
+export function distance(x1, y1, x2, y2) {
+  return Math.hypot(x2 - x1, y2 - y1);
+}
+
+/**
+ * Линейная интерполяция (lerp)
+ */
+export function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+// ====== УТИЛИТЫ ДЛЯ РАБОТЫ С МАССИВАМИ ======
+
+/**
+ * Перемешивание массива (копия)
+ */
+export function shuffle(array) {
+  const arr = array.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = randomInt(0, i);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ====== УТИЛИТЫ ДЛЯ ОБЪЕКТОВ И ИДЕНТИФИКАТОРОВ ======
+
+/**
+ * Глубокое клонирование объекта (без функций и нестандартных типов)
+ */
+export function deepClone(obj) {
+  try {
+    return structuredClone(obj); // Современный метод, если доступен
+  } catch {
+    logWarn('structuredClone недоступен, используется JSON fallback');
+    return JSON.parse(JSON.stringify(obj));
+  }
+}
+
+/**
+ * Генерация уникального ID
+ */
+export function generateId(prefix = 'id') {
+  return `${prefix}_${Math.random().toString(36).slice(2, 6)}${Date.now().toString(36)}`;
+}
+
+// ====== УТИЛИТЫ ДЛЯ КООРДИНАТ И ПРЯМОУГОЛЬНИКОВ ======
+
+/**
+ * Попадает ли точка внутрь прямоугольника
  */
 export function pointInRect(x, y, rect) {
   return (
@@ -50,36 +113,16 @@ export function pointInRect(x, y, rect) {
 }
 
 /**
- * Расстояние между двумя точками (обычно для поиска ближайших или траекторий)
+ * Сравнение координат клеток (row/col)
  */
-export function distance(x1, y1, x2, y2) {
-  return Math.hypot(x2 - x1, y2 - y1);
+export function coordsEqual(a, b) {
+  return a && b && a.row === b.row && a.col === b.col;
 }
 
-/**
- * Ограничитель (clamp) значения между min и max — для положений или HP
- */
-export function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
+// ====== ДРУГИЕ ПОЛЕЗНЫЕ УТИЛИТЫ ======
 
 /**
- * Быстрый глубокий клон объекта (осторожно: не копирует функции, даты, Map/Set)
- * Используй только для простых игровых обьектов и состояния сетки
- */
-export function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
-/**
- * Генерация уникального id для временных объектов (например, враг, модуль)
- */
-export function generateId(prefix = 'id') {
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now()}`;
-}
-
-/**
- * Форматирует миллисекунды в строку mm:ss (например, для таймеров волн)
+ * Формат времени (мм:сс) из миллисекунд
  */
 export function formatTime(ms) {
   const total = Math.floor(ms / 1000);
@@ -89,27 +132,11 @@ export function formatTime(ms) {
 }
 
 /**
- * Линейная интерполяция (lerp), бывает полезна для анимации/движений
+ * Задержка (await sleep)
  */
-export function lerp(a, b, t) {
-  return a + (b - a) * t;
+export function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * Быстрое перемешивание массива (например для случайного рендера волн)
- */
-export function shuffle(array) {
-  let arr = array.slice();
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = randomInt(0, i);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-// ---
-// Можно добавлять новые утилиты по аналогии выше!
-// ---
-
-// Пример автотеста после импорта (удалить после интеграции)
-// logDebug('utils.js загружен, DEBUG=' + DEBUG);
+// ====== АВТОЗАПУСК ДЕБАГ-ЛОГА ПРИ ИМПОРТЕ ======
+logDebug('utils.js загружен. DEBUG =', DEBUG);
