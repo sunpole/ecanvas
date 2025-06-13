@@ -21,15 +21,16 @@ export function createGrid(rows = GRID_TOTAL, cols = GRID_TOTAL) {
     for (let col = 0; col < cols; col++) {
       let status = 'empty';
 
-      // OUTLINE — крайние стены вокруг игрового поля
-      if (
-        row < OUTLINE || row >= GRID_TOTAL - OUTLINE ||
-        col < OUTLINE || col >= GRID_TOTAL - OUTLINE
+      if (SPAWN_CELLS.some(cell => cell.row === row && cell.col === col)) {
+        status = 'spawn';
+      } else if (EXIT_CELLS.some(cell => cell.row === row && cell.col === col)) {
+        status = 'exit';
+      } else if (
+        row < OUTLINE || row >= rows - OUTLINE ||
+        col < OUTLINE || col >= cols - OUTLINE
       ) {
         status = 'wall';
       }
-      if (SPAWN_CELLS.some(cell => cell.row === row && cell.col === col)) status = 'spawn';
-      if (EXIT_CELLS.some(cell => cell.row === row && cell.col === col)) status = 'exit';
 
       rowArr.push({ row, col, status, module: null });
     }
@@ -37,6 +38,7 @@ export function createGrid(rows = GRID_TOTAL, cols = GRID_TOTAL) {
   }
   logDebug("✅ Сетка создана", grid);
 }
+
 
 // ======= ПРОВЕРКА ПРОХОДИМОСТИ ДЛЯ PATHFINDING =======
 /**
