@@ -132,6 +132,19 @@ function getModuleAt(row, col) {
   return modules.find(m => m.row === row && m.col === col) || null;
 }
 
+// ==== renderModule ====
+function renderModule(module, ctx) {
+  const size = 32; // размер клетки — подберите под свой размер клетки
+  ctx.fillStyle = module.color;
+  ctx.fillRect(module.col * size, module.row * size, size, size);
+
+  ctx.fillStyle = 'white';
+  ctx.font = '14px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(module.level, module.col * size + size / 2, module.row * size + size / 2);
+}
+
 // ==== УДАЛЕНИЕ МОДУЛЯ ====
 function removeModule(row, col) {
   const idx = modules.findIndex(m => m.row === row && m.col === col);
@@ -157,5 +170,6 @@ export {
   getModulesInRange,
   getModuleAt,
   removeModule,
-  resetModules
+  resetModules,
+  renderModule
 };
