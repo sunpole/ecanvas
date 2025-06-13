@@ -2,9 +2,16 @@
 
 // ====== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И DOM ======
 let scoreEl, waveEl, livesEl, msgEl, startPauseBtn, restartBtn, devLabel;
+let hideMsgTimeout = null;
+let initialized = false;
 
-// ====== INIT UI: Инициализация и навешивание обработчиков ======
+// ====== ИНИЦИАЛИЗАЦИЯ UI ======
 export function initUI({ onStartPause, onRestart } = {}) {
+  if (initialized) {
+    console.warn('[UI] initUI уже была вызвана, повторная инициализация предотвращена');
+    return;
+  }
+
   scoreEl = document.getElementById('scoreCount');
   waveEl = document.getElementById('waveCount');
   livesEl = document.getElementById('livesCount');
@@ -18,6 +25,7 @@ export function initUI({ onStartPause, onRestart } = {}) {
     msgEl.id = 'gameMessage';
     msgEl.className = 'game-message';
     document.body.appendChild(msgEl);
+    console.log('[UI] Создан элемент gameMessage');
   }
 
   if (startPauseBtn && typeof onStartPause === 'function') {
@@ -27,7 +35,11 @@ export function initUI({ onStartPause, onRestart } = {}) {
     restartBtn.onclick = onRestart;
   }
 
-  console.log('[UI] Инициализация UI завершена');
+  console.log('[UI] Инициализация UI завершена', {
+    scoreEl, waveEl, livesEl, msgEl, startPauseBtn, restartBtn, devLabel
+  });
+
+  initialized = true;
 }
 
 // ====== ОТРИСОВКА UI НА КАНВАСЕ ======
@@ -46,48 +58,86 @@ export function renderUI(ctx, gameState) {
   ctx.restore();
 }
 
+// ====== БЕЗОПАСНО УСТАНОВИТЬ ТЕКСТ ======
+function setTextSafe(el, value) {
+  if (el) el.textContent = String(value);
+}
+
 // ====== ОБНОВЛЕНИЕ UI В DOM ======
 export function updateUI(gameState) {
   if (!gameState) return;
-  if (scoreEl) scoreEl.textContent = `${gameState.score ?? 0}`;
-  if (waveEl) waveEl.textContent = `${gameState.wave ?? 1}`;
-  if (livesEl) livesEl.textContent = `${gameState.lives ?? 5}`;
-  if (devLabel) devLabel.style.display = gameState.devMode ? '' : 'none';
+
+  setTextSafe(scoreEl, gameState.score ?? 0);
+  setTextSafe(waveEl, gameState.wave ?? 1);
+  setTextSafe(livesEl, gameState.lives ?? 5);
+
+  if (devLabel) {
+    devLabel.style.display = gameState.devMode ? '' : 'none';
+    devLabel.textContent = gameState.devMode ? 'DEV MODE: ON' : '';
+  }
+
+  updateButtonStates(gameState.running);
 }
 
-// ====== ПОКАЗАТЬ ВСПЛЫВАЮЩЕЕ СООБЩЕНИЕ ======
-let hideMsgTimeout = null;
+// ====== УСТАНОВКА НАДПИСИ КНОПКИ СТАРТ/ПАУЗА ======
+export function setStartPauseLabel(text) {
+  if (startPauseBtn) {
+    startPauseBtn.textContent = text;
+  }
+}
+
+// ====== ОБНОВЛЕНИЕ СОСТОЯНИЯ КНОПОК ======
+function updateButtonStates(isRunning) {
+  if (startPauseBtn) {
+    startPauseBtn.textContent = isRunning ? 'Пауза' : 'Старт';
+  }
+  if (restartBtn) {
+    restartBtn.disabled = isRunning;
+  }
+}
+
+// ====== ПОКАЗ СООБЩЕНИЯ НА ЭКРАН ======
 export function showMessage(text, duration = 2000) {
   if (!msgEl) return;
+
+  clearTimeout(hideMsgTimeout);
+
   msgEl.textContent = text;
   msgEl.style.opacity = '1';
   msgEl.style.pointerEvents = 'auto';
   msgEl.classList.add('active');
-  clearTimeout(hideMsgTimeout);
+
   hideMsgTimeout = setTimeout(() => {
     if (msgEl) {
       msgEl.style.opacity = '0';
       msgEl.classList.remove('active');
     }
   }, duration);
-  console.log(`[UI] Показано сообщение: "${text}" (длительность: ${duration}ms)`);
+
+  console.log(`[UI] Показано сообщение: "${text}" (${duration}ms)`);
 }
 
 // ====== ОБРАБОТКА КЛИКОВ ПО UI ======
 export function handleUIClick(x, y) {
-  // Заготовка под обработку кликов по canvas, если будет нужно
-  // Логика зависит от проекта, здесь просто лог
-  console.log(`[UI] Клик по UI в координатах: x=${x}, y=${y}`);
+  console.log(`[UI] Клик по UI: x=${x}, y=${y}`);
 }
 
-// ====== СБРОС UI ======
+// ====== СБРОС UI К НАЧАЛЬНЫМ ЗНАЧЕНИЯМ ======
 export function resetUI() {
+  setTextSafe(scoreEl, '0');
+  setTextSafe(waveEl, '1');
+  setTextSafe(livesEl, '5');
+
   if (msgEl) {
     msgEl.style.opacity = '0';
     msgEl.classList.remove('active');
   }
-  if (scoreEl) scoreEl.textContent = '0';
-  if (waveEl) waveEl.textContent = '1';
-  if (livesEl) livesEl.textContent = '5';
+
+  if (devLabel) {
+    devLabel.style.display = 'none';
+    devLabel.textContent = '';
+  }
+
+  updateButtonStates(false);
   console.log('[UI] UI сброшен к начальным значениям');
 }
