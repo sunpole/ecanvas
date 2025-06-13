@@ -3,7 +3,7 @@
 import { orders, updateOrderPosition, renderOrder, cleanupDeadOrders } from './orders.js';
 import { loadOrderPresets, startWave, isWaveFinished } from './spawner.js';
 import { drawGrid } from './renderer.js';
-import { modules, renderModule } from './modules.js';   // towers.js (должен быть modules.js) должен экспортировать этот набор
+import { modules, renderModule, updateModules } from './modules.js'; // добавил updateModules
 
 let lastTimestamp = 0;
 
@@ -18,10 +18,11 @@ export function gameLoop(timestamp) {
   renderAll();
 
   if (isWaveFinished()) {
-    // place to handle end of wave: auto-next, modal, victory, etc.
-    // Например: startWave(следующая_волна); или показать modal("Волна завершена!")
-    // Можно для разработки просто паузу:
-    // return; // или не вызывать requestAnimationFrame для паузы
+    // Обработка конца волны (пока заглушка)
+    console.log('[GAME-LOOP] Волна завершена');
+    // Здесь можно запускать следующую волну, показывать модалки и т.п.
+    // Например: startWave(следующая_волна);
+    // Для паузы просто не вызывай requestAnimationFrame
   } else {
     requestAnimationFrame(gameLoop);
   }
@@ -37,45 +38,42 @@ export function updateAll(delta) {
   }
   cleanupDeadOrders();
 
-  // Здесь можно добавить апдейт для башен, если требуется (например, для зарядки, пуль или анимаций)
-  // for (const tower of towers) { updateTower(tower, delta); }
+  // Обновляем модули (башни)
+  updateModules(delta, orders);
 }
 
 /**
  * Отрисовка всех объектов за кадр
  */
 export function renderAll() {
-  drawGrid();
+  const canvas = document.getElementById('game-canvas');
+  const ctx = canvas.getContext('2d');
 
-  // Отрисовать башни, если есть towers.js и renderTower:
-  if (typeof renderTower === "function" && Array.isArray(towers)) {
-    const canvas = document.getElementById('game-canvas');
-    const ctx = canvas.getContext('2d');
-    for (const tower of towers) {
-      renderTower(tower, ctx);
-    }
+  drawGrid(ctx);
+
+  // Отрисовать модули (башни)
+  for (const module of modules) {
+    renderModule(module, ctx);
   }
 
   // Отрисовать врагов
-  const canvas = document.getElementById('game-canvas');
-  const ctx = canvas.getContext('2d');
   for (const order of orders) {
     renderOrder(order, ctx);
   }
 }
 
 /**
- * Старт всей игры (инициализация пресетов, волны, поля и первого запроса animationFrame)
+ * Запуск игры — инициализация и старт первой волны
  */
 export async function startGame() {
   console.log('[GAME-LOOP] startGame — игра запущена');
   await loadOrderPresets();
 
-  // Запуск первой волны
+  // Запускаем первую волну (пример)
   startWave({
     orders: [
       { id: 'vip', count: 1 }
-      // добавь другие типы врагов при необходимости
+      // можно добавить другие типы врагов
     ]
   });
 
@@ -83,9 +81,8 @@ export async function startGame() {
 }
 
 /**
- * Пауза игры
+ * Пауза игры (заглушка)
  */
 export function pauseGame() {
-  // Пока только заглушка
   console.log('[GAME-LOOP] pauseGame — игра на паузе');
 }
