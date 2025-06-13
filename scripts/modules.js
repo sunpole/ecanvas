@@ -1,9 +1,10 @@
 // scripts/modules.js
 
-// ==== ХРАНЕНИЕ МОДУЛЕЙ ====
-export const modules = []; // массив всех размещённых модулей на поле
+export const modules = [];
 
-// ==== ПАРАМЕТРЫ ТИПОВ МОДУЛЕЙ ====
+const CELL_SIZE = 32;             // Размер клетки (используется для отрисовки)
+const UPGRADE_TIME = 2;           // Время апгрейда в секундах (константа)
+
 const MODULE_TYPES = {
   basic: {
     name: 'Стандарт',
@@ -25,20 +26,37 @@ const MODULE_TYPES = {
     upgradeAttack: 5,
     maxLevel: 4
   }
-  // Можно добавить новые типы.
 };
 
-// ==== ХЕЛПЕР: Получение параметров типа модуля ====
+// Получение параметров по типу модуля
 function getModuleParams(type) {
   return MODULE_TYPES[type] || MODULE_TYPES['basic'];
 }
 
-// ==== ДОБАВЛЕНИЕ МОДУЛЯ НА ПОЛЕ ====
+// Генерация уникального ID для модуля
+function generateId() {
+  return Math.random().toString(36).slice(2) + Date.now();
+}
+
+// Проверка валидности размещения модуля
+function isPlaceValid(row, col) {
+  if (modules.some(m => m.row === row && m.col === col)) {
+    console.log(`[MODULES] Место занято: ${row},${col}`);
+    return false;
+  }
+  // TODO: Проверить проходимость по сетке (grid.js)
+  return true;
+}
+
+// Добавление модуля на поле
 function placeModule(row, col, type = 'basic') {
-  if (!isPlaceValid(row, col)) return false;
+  if (!isPlaceValid(row, col)) {
+    console.warn(`[MODULES] Нельзя разместить модуль (${type}) на ${row},${col} — занято или недоступно`);
+    return false;
+  }
   const params = getModuleParams(type);
   const module = {
-    id: Math.random().toString(36).slice(2) + Date.now(),
+    id: generateId(),
     row, col,
     type,
     level: 1,
@@ -56,25 +74,28 @@ function placeModule(row, col, type = 'basic') {
   return true;
 }
 
-// ==== ПРОВЕРКА ДОПУСТИМОСТИ РАЗМЕЩЕНИЯ ====
-function isPlaceValid(row, col) {
-  if (modules.some(m => m.row === row && m.col === col)) return false;
-  // TODO: добавить проверку через grid.js если появится непроходимость
-  return true;
-}
-
-// ==== АПГРЕЙД МОДУЛЯ ====
+// Начало апгрейда модуля
 function upgradeModule(module) {
+  if (module.upgrading) {
+    console.warn(`[MODULES] Модуль ${module.id} уже в процессе апгрейда`);
+    return false;
+  }
   const params = getModuleParams(module.type);
-  if (module.upgrading || module.level >= params.maxLevel) return false;
-  module.upgTotal = 2;
+  if (module.level >= params.maxLevel) {
+    console.warn(`[MODULES] Модуль ${module.id} достиг максимального уровня (${module.level})`);
+    return false;
+  }
+
+  module.upgTotal = UPGRADE_TIME;
   module.upgDone = 0;
   module.upgrading = true;
-  console.log(`[MODULES] Улучшение модуля (${module.type}) -> уровень ${module.level + 1}`);
+  console.log(`[MODULES] Запущен апгрейд модуля (${module.type}) ${module.id} -> уровень ${module.level + 1}`);
   return true;
 }
 
-// ==== МАССОВОЕ ОБНОВЛЕНИЕ (для game-loop) ====
+// Обновление всех модулей (вызывается в game-loop)
+// delta — время с последнего вызова (в секундах)
+// orders — массив текущих заказов (врагов)
 function updateModules(delta, orders) {
   for (const module of modules) {
     if (module.upgrading) {
@@ -86,7 +107,7 @@ function updateModules(delta, orders) {
         module.upgrading = false;
         module.upgTotal = 0;
         module.upgDone = 0;
-        console.log(`[MODULES] Модуль прокачан. уровень =`, module.level);
+        console.log(`[MODULES] Модуль ${module.id} прокачан до уровня ${module.level}`);
       }
       continue;
     }
@@ -102,66 +123,68 @@ function updateModules(delta, orders) {
   }
 }
 
-// ==== ПОИСК ВРАГОВ В РАДИУСЕ для данного модуля ====
+// Получение целей в радиусе действия модуля
 function getModulesTargets(module, orders) {
   return orders.filter(order =>
     !order.dead &&
-    distance(module.row, module.col, order.row, order.col) <= module.range
+    distanceSquared(module.row, module.col, order.row, order.col) <= module.range * module.range
   );
 }
-function distance(r1, c1, r2, c2) {
-  return Math.sqrt((r1 - r2) ** 2 + (c1 - c2) ** 2);
+
+// Квадрат расстояния (без вычисления корня для производительности)
+function distanceSquared(r1, c1, r2, c2) {
+  return (r1 - r2) ** 2 + (c1 - c2) ** 2;
 }
 
-// ==== АТАКА ====
+// Нанесение урона модулем врагу
 function dealDamage(module, order) {
   order.hp -= module.attack;
   if (order.hp < 0) order.hp = 0;
-  console.log(`[MODULES] Модуль (${module.type}/${module.level}) атакует заказ: ${order.row},${order.col}: -${module.attack}`);
+  console.log(`[MODULES] Модуль (${module.type}/${module.level}) атакует заказ: ${order.row},${order.col}, урон: ${module.attack}, HP осталось: ${order.hp.toFixed(1)}`);
 }
 
-// ==== МОДУЛИ В РАДИУСЕ вокруг врага (например для ауры) ====
+// Получение всех модулей в радиусе вокруг врага (например, для ауры)
 function getModulesInRange(order, radius = 2) {
   return modules.filter(module =>
-    distance(module.row, module.col, order.row, order.col) <= radius
+    distanceSquared(module.row, module.col, order.row, order.col) <= radius * radius
   );
 }
 
-// ==== ВСПОМОГАТЕЛЬНОЕ: НАЙТИ МОДУЛЬ ПО КООРДИНАТАМ ====
+// Поиск модуля по координатам
 function getModuleAt(row, col) {
   return modules.find(m => m.row === row && m.col === col) || null;
 }
 
-// ==== renderModule ====
+// Отрисовка модуля на Canvas
 function renderModule(module, ctx) {
-  const size = 32; // размер клетки — подберите под свой размер клетки
   ctx.fillStyle = module.color;
-  ctx.fillRect(module.col * size, module.row * size, size, size);
+  ctx.fillRect(module.col * CELL_SIZE, module.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
 
   ctx.fillStyle = 'white';
   ctx.font = '14px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(module.level, module.col * size + size / 2, module.row * size + size / 2);
+  ctx.fillText(module.level, module.col * CELL_SIZE + CELL_SIZE / 2, module.row * CELL_SIZE + CELL_SIZE / 2);
 }
 
-// ==== УДАЛЕНИЕ МОДУЛЯ ====
+// Удаление модуля с поля
 function removeModule(row, col) {
   const idx = modules.findIndex(m => m.row === row && m.col === col);
   if (idx !== -1) {
+    console.log(`[MODULES] Модуль ${modules[idx].id} удалён с позиции: ${row},${col}`);
     modules.splice(idx, 1);
-    console.log(`[MODULES] Модуль удалён с позиции: ${row},${col}`);
     return true;
   }
+  console.warn(`[MODULES] Модуль на позиции ${row},${col} не найден для удаления`);
   return false;
 }
 
-// ==== ОЧИСТКА ВСЕХ МОДУЛЕЙ ====
+// Очистка всех модулей
 function resetModules() {
   modules.length = 0;
+  console.log('[MODULES] Все модули очищены');
 }
 
-// ==== FULL EXPORT ====
 export {
   placeModule,
   upgradeModule,
