@@ -1,117 +1,189 @@
-// scripts/orders.js
+export const modules = [];
 
-import { findPath, recalculatePath } from './pathfinding.js';
-import { grid } from './grid.js';
-import { logDebug } from './utils.js';
+const CELL_SIZE = 32;
+const UPGRADE_TIME = 2;
 
-// Хранилище всех активных order’ов (врагов/юнитов) на карте
-export const orders = [];
+const MODULE_TYPES = {
+  basic: {
+    name: 'Стандарт',
+    color: '#39c792',
+    attack: 18,
+    range: 2,
+    cooldown: 1.2,
+    upgradeCost: 30,
+    upgradeAttack: 7,
+    maxLevel: 4
+  },
+  fast: {
+    name: 'Быстрая',
+    color: '#2db3fd',
+    attack: 12,
+    range: 2,
+    cooldown: 0.7,
+    upgradeCost: 40,
+    upgradeAttack: 5,
+    maxLevel: 4
+  }
+};
 
-let ORDER_ID = 1; // внутренний счетчик для уникальных id
+function getModuleParams(type) {
+  return MODULE_TYPES[type] || MODULE_TYPES['basic'];
+}
 
-/**
- * Создать и разместить новый order (враг/юнит) по данным шаблона orderData
- */
-export function spawnOrder(orderData) {
-  const path = findPath(orderData.spawn, orderData.exit);
-  if (!path) {
-    logDebug('[ORDERS] spawnOrder: путь не найден для', orderData);
+function generateId() {
+  return Math.random().toString(36).slice(2) + Date.now();
+}
+
+function isPlaceValid(row, col) {
+  if (modules.some(m => m.row === row && m.col === col)) {
+    console.debug(`[MODULES] Место занято: (${row},${col})`);
     return false;
   }
-  const order = {
-    id: ORDER_ID++,
-    row: orderData.spawn.row,
-    col: orderData.spawn.col,
-    path,               // Массив клеток пути до выхода
-    pathIndex: 0,       // Индекс текущего шага по маршруту
-    hp: orderData.hp || 10,
-    maxHp: orderData.hp || 10,
-    dead: false,
-    speed: orderData.speed || 1,  // Клеток в тик (или можно часть клетки — float)
-    progress: 0, // Для плавности движения
-    ...orderData
+  // TODO: Проверить проходимость по сетке (grid.js)
+  return true;
+}
+
+function placeModule(row, col, type = 'basic') {
+  if (!isPlaceValid(row, col)) {
+    console.warn(`[MODULES] Нельзя разместить модуль "${type}" на (${row},${col}) — занято или недоступно`);
+    return false;
+  }
+  const params = getModuleParams(type);
+  const module = {
+    id: generateId(),
+    row, col,
+    type,
+    level: 1,
+    attack: params.attack,
+    range: params.range,
+    cooldown: params.cooldown,
+    color: params.color,
+    lastAct: -Infinity,
+    upgTotal: 0,
+    upgDone: 0,
+    upgrading: false
   };
-  orders.push(order);
-  logDebug('[ORDERS] Новый order создан:', order);
-  return order;
+  modules.push(module);
+  console.log(`[MODULES] Установлен модуль: ID=${module.id}, Тип="${type}", Позиция=(${row},${col})`);
+  return true;
 }
 
-/**
- * Одна итерация движения “заказа” по своему маршруту (перемещение, столкновения и т.п.)
- * timeDelta — шаг времени игры (для анимации/ускорения)
- */
-export function updateOrderPosition(order, timeDelta = 1) {
-  if (order.dead || !order.path || order.pathIndex >= order.path.length - 1) return;
-  // Для плавности: двигаемся по клеткам с учетом скорости (speed — клетки в секунду)
-  order.progress += order.speed * timeDelta;
-  while (order.progress >= 1 && order.pathIndex < order.path.length - 1) {
-    order.pathIndex++;
-    order.row = order.path[order.pathIndex].row;
-    order.col = order.path[order.pathIndex].col;
-    order.progress -= 1;
+function upgradeModule(module) {
+  if (!modules.includes(module)) {
+    console.error('[MODULES] Попытка апгрейда неизвестного модуля:', module);
+    return false;
   }
-  // Достигли финиша?
-  if (order.pathIndex === order.path.length - 1) {
-    orderReachedEnd(order);
+  if (module.upgrading) {
+    console.warn(`[MODULES] Модуль ${module.id} уже в процессе апгрейда`);
+    return false;
   }
-}
-
-/**
- * Нарисовать единичный order на Canvas (ctx)
- */
-export function renderOrder(order, ctx, cellSize = 40) {
-  if (order.dead) return;
-  // Опционально: более красиво можно через спрайты, но для MVP — кружочек/квадратик
-  ctx.save();
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = order.color || '#2e90ff';
-  const x = order.col * cellSize;
-  const y = order.row * cellSize;
-  ctx.beginPath();
-  ctx.arc(x + cellSize / 2, y + cellSize / 2, cellSize / 3, 0, 2 * Math.PI);
-  ctx.fill();
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.restore();
-
-  // Жизни (HP) в виде полоски сверху
-  if (order.hp < order.maxHp) {
-    ctx.fillStyle = '#f22';
-    ctx.fillRect(x + 5, y + 5, (cellSize - 10) * (order.hp / order.maxHp), 4);
-    ctx.strokeStyle = '#000';
-    ctx.strokeRect(x + 5, y + 5, cellSize - 10, 4);
+  const params = getModuleParams(module.type);
+  if (module.level >= params.maxLevel) {
+    console.warn(`[MODULES] Модуль ${module.id} достиг максимального уровня (${module.level})`);
+    return false;
   }
+
+  module.upgTotal = UPGRADE_TIME;
+  module.upgDone = 0;
+  module.upgrading = true;
+  console.log(`[MODULES] Запущен апгрейд модуля ID=${module.id}, Тип=${module.type}, Позиция=(${module.row},${module.col}), уровень ${module.level} -> ${module.level + 1}`);
+  return true;
 }
 
-/**
- * Когда враг доходит до выхода — вызывается это событие
- * (уменьшение счетчика жизней игрока, проигрыш, удаление юнита и др.)
- */
-export function orderReachedEnd(order) {
-  logDebug('[ORDERS] orderReachedEnd:', order.id);
-  order.dead = true;
-  // TODO — обработать: уменьшить жизнь игрока, проигрыш и т.д.
-}
+function updateModules(delta, orders) {
+  for (const module of modules) {
+    if (module.upgrading) {
+      module.upgDone += delta;
+      if (module.upgDone >= module.upgTotal) {
+        const params = getModuleParams(module.type);
+        module.level++;
+        module.attack += params.upgradeAttack;
+        module.upgrading = false;
+        module.upgTotal = 0;
+        module.upgDone = 0;
+        console.log(`[MODULES] Модуль ID=${module.id} прокачан до уровня ${module.level}`);
+      }
+      continue;
+    }
 
-/**
- * Повреждение order’а (например, от башни/удара)
- */
-export function orderTakeDamage(order, amount) {
-  if (order.dead) return;
-  order.hp -= amount;
-  if (order.hp <= 0) {
-    order.dead = true;
-    logDebug("[ORDERS] Order", order.id, "уничтожен");
-    // Можно добавить анимацию взрыва, звук и др.
+    module.lastAct += delta;
+    if (module.lastAct >= module.cooldown) {
+      const targets = getModulesTargets(module, orders);
+      if (targets.length) {
+        dealDamage(module, targets[0]);
+        module.lastAct = 0;
+      } else {
+        console.debug(`[MODULES] Модуль ID=${module.id} не нашёл целей в радиусе`);
+      }
+    }
   }
 }
 
-/**
- * Удалить всех погибших orders из массива
- */
-export function cleanupDeadOrders() {
-  for (let i = orders.length - 1; i >= 0; i--) {
-    if (orders[i].dead) orders.splice(i, 1);
+function getModulesTargets(module, orders) {
+  return orders.filter(order =>
+    !order.dead &&
+    distanceSquared(module.row, module.col, order.row, order.col) <= module.range * module.range
+  );
+}
+
+function distanceSquared(r1, c1, r2, c2) {
+  return (r1 - r2) ** 2 + (c1 - c2) ** 2;
+}
+
+function dealDamage(module, order) {
+  order.hp -= module.attack;
+  if (order.hp < 0) order.hp = 0;
+  console.log(`[MODULES] Модуль (ID=${module.id}, ${module.type}/${module.level}) атакует заказ (${order.row},${order.col}), урон: ${module.attack}, HP осталось: ${order.hp.toFixed(1)}`);
+  if (order.hp === 0) {
+    console.log(`[MODULES] Заказ (${order.row},${order.col}) уничтожен модулем ID=${module.id}`);
   }
 }
+
+function getModulesInRange(order, radius = 2) {
+  return modules.filter(module =>
+    distanceSquared(module.row, module.col, order.row, order.col) <= radius * radius
+  );
+}
+
+function getModuleAt(row, col) {
+  return modules.find(m => m.row === row && m.col === col) || null;
+}
+
+function renderModule(module, ctx) {
+  ctx.fillStyle = module.color;
+  ctx.fillRect(module.col * CELL_SIZE, module.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+  ctx.fillStyle = 'white';
+  ctx.font = '14px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(module.level, module.col * CELL_SIZE + CELL_SIZE / 2, module.row * CELL_SIZE + CELL_SIZE / 2);
+}
+
+function removeModule(row, col) {
+  const idx = modules.findIndex(m => m.row === row && m.col === col);
+  if (idx !== -1) {
+    console.log(`[MODULES] Модуль ID=${modules[idx].id} удалён с позиции: (${row},${col})`);
+    modules.splice(idx, 1);
+    return true;
+  }
+  console.warn(`[MODULES] Модуль на позиции (${row},${col}) не найден для удаления`);
+  return false;
+}
+
+function resetModules() {
+  modules.length = 0;
+  console.log('[MODULES] Все модули очищены');
+}
+
+export {
+  placeModule,
+  upgradeModule,
+  isPlaceValid,
+  updateModules,
+  getModulesInRange,
+  getModuleAt,
+  removeModule,
+  resetModules,
+  renderModule
+};
