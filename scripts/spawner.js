@@ -28,6 +28,9 @@ export async function loadOrderPresets() {
       return;
     }
     PRESETS = {}; // Очистка перед загрузкой
+    if (json.orders.length === 0) {
+      console.warn('[SPAWNER] В orders.json нет пресетов врагов');
+    }
     for (const order of json.orders) {
       if (!order.id) {
         console.warn('[SPAWNER] Найден пресет без id:', order);
@@ -51,6 +54,19 @@ export function getPresetById(id) {
 }
 
 /**
+ * Сброс состояния спавнера (очистка очереди, волны, остановка таймера)
+ */
+export function resetSpawner() {
+  if (spawnTimer) {
+    clearInterval(spawnTimer);
+    spawnTimer = null;
+  }
+  orderQueue = [];
+  currentWave = null;
+  console.log('[SPAWNER] Спавнер сброшен');
+}
+
+/**
  * Запуск новой волны с параметрами волны
  * @param {object} waveData - объект волны с массивом orders [{id, count}, ...]
  */
@@ -59,13 +75,22 @@ export function startWave(waveData) {
     console.error('[SPAWNER] startWave: некорректные данные волны', waveData);
     return;
   }
-  console.log('[SPAWNER] Запуск волны:', waveData);
-  currentWave = waveData;
-  orderQueue = queueOrders(waveData);
+
   if (spawnTimer) {
+    console.warn('[SPAWNER] Волна уже идет, текущий спавн будет остановлен и начнется новая волна');
     clearInterval(spawnTimer);
     spawnTimer = null;
   }
+
+  if (!SPAWN_CELLS.length || !EXIT_CELLS.length) {
+    console.error('[SPAWNER] Ошибка: отсутствуют координаты SPAWN_CELLS или EXIT_CELLS, волна не может быть запущена');
+    return;
+  }
+
+  console.log('[SPAWNER] Запуск волны:', waveData);
+  currentWave = waveData;
+  orderQueue = queueOrders(waveData);
+
   spawnTimer = setInterval(tickSpawner, spawnIntervalMs);
 }
 
@@ -102,14 +127,13 @@ export function tickSpawner() {
     return;
   }
 
-  if (!SPAWN_CELLS.length || !EXIT_CELLS.length) {
-    console.error('[SPAWNER] Ошибка: отсутствуют координаты SPAWN_CELLS или EXIT_CELLS');
-    return;
-  }
-
-  // Берём первую спавн-клетку и первую exit-клетку (в дальнейшем можно улучшить логику)
   const spawnCell = SPAWN_CELLS[0];
   const exitCell = EXIT_CELLS[0];
+
+  if (!spawnCell || !exitCell) {
+    console.error('[SPAWNER] Ошибка: отсутствуют координаты для спавна или выхода');
+    return;
+  }
 
   const orderId = orderQueue.shift();
   const preset = getPresetById(orderId);
@@ -119,14 +143,13 @@ export function tickSpawner() {
     return;
   }
 
-  // Добавляем координаты спавна и выхода в параметры
   spawnOrder({
     ...preset,
     spawn: { row: spawnCell.row, col: spawnCell.col },
     exit: { row: exitCell.row, col: exitCell.col }
   });
 
-  console.log(`[SPAWNER] Спавн врага ID=${orderId} на клетке (${spawnCell.row},${spawnCell.col})`);
+  console.log(`[SPAWNER] Спавн врага ID=${orderId} на клетке (${spawnCell.row},${spawnCell.col}), осталось в очереди: ${orderQueue.length}`);
 }
 
 /**
@@ -134,8 +157,6 @@ export function tickSpawner() {
  * @returns {boolean}
  */
 export function isWaveFinished() {
-  // orderQueue пуст — спавн врагов окончен
-  // orders — глобальный массив всех врагов, проверяем, все ли мертвы
   const finished = orderQueue.length === 0 && orders.every(o => o.dead);
   console.log(`[SPAWNER] Проверка завершения волны: ${finished ? 'Завершена' : 'Ещё идёт'}`);
   return finished;
