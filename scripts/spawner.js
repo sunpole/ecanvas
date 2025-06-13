@@ -11,15 +11,24 @@ let spawnTimer = null;
 
 // 1. Загрузка пресетов врагов из orders.json
 export async function loadOrderPresets() {
-  const response = await fetch('data/orders.json');
-  const json = await response.json();
-  for (const order of json.orders) {
-    PRESETS[order.id] = order;
+  try {
+    const response = await fetch('data/orders.json');
+    if (!response.ok) {
+      console.error(`[SPAWNER] Ошибка загрузки orders.json: ${response.statusText}`);
+      return;
+    }
+    const json = await response.json();
+    for (const order of json.orders) {
+      PRESETS[order.id] = order;
+    }
+    // Можно сохранить constants из json.constants, если нужно, например default_hp и т.д.
+    console.log('[SPAWNER] Пресеты врагов загружены:', Object.keys(PRESETS));
+  } catch (error) {
+    console.error('[SPAWNER] Ошибка при загрузке пресетов врагов:', error);
   }
-  // Можно сохранить constants из json.constants, если нужно, например default_hp и т.д.
 }
 
-// 2. Для получения шаблона по id из PRESERS
+// 2. Для получения шаблона по id из PRESETS
 function getPresetById(id) {
   return PRESETS[id];
 }
@@ -41,6 +50,7 @@ export function queueOrders(waveData) {
       result.push(orderGroup.id);
     }
   });
+  console.log('[SPAWNER] Очередь врагов сформирована:', result);
   return result;
 }
 
@@ -48,6 +58,8 @@ export function queueOrders(waveData) {
 export function tickSpawner() {
   if (!orderQueue.length) {
     clearInterval(spawnTimer);
+    spawnTimer = null;
+    console.log('[SPAWNER] Волна закончилась, спавн остановлен');
     return;
   }
   // Для простоты — используем первую спавн-клетку и первую exit-клетку
@@ -65,9 +77,12 @@ export function tickSpawner() {
     spawn: { row: spawnCell.row, col: spawnCell.col },
     exit: { row: exitCell.row, col: exitCell.col }
   });
+  console.log(`[SPAWNER] Спавн врага ID=${orderId} на клетке (${spawnCell.row},${spawnCell.col})`);
 }
 
 // 6. Проверка: все ли из этой волны ушли/убиты («волна завершена»)
 export function isWaveFinished() {
-  return orderQueue.length === 0 && orders.every(o => o.dead);
+  const finished = orderQueue.length === 0 && orders.every(o => o.dead);
+  console.log(`[SPAWNER] Проверка завершения волны: ${finished ? 'Завершена' : 'Еще идет'}`);
+  return finished;
 }
