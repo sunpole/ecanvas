@@ -115,6 +115,33 @@ a:hover, a:focus {
   color: var(--color-link-hover);
   filter: brightness(0.85);
 }
+
+#shop {
+  display: flex;
+  gap: 8px;
+  background: var(--color-card, #242424);
+  padding: 12px 12px 9px 12px;
+  border-radius: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 12px;
+}
+#shop button {
+  font-size: 1em;
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: none;
+  background: var(--color-accent, #337ad9);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#shop button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  background: #888;
+}
+
 /* Адаптивность для панелей и canvas */
 @media (orientation: landscape) and (min-width: 1025px) {
   body, .main-wrapper { flex-direction: column; }
