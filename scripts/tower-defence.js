@@ -1,26 +1,28 @@
 // scripts/tower-defence.js
 
-// 🎯 Подключаем game-grid: canvas, drawGrid(), getCellByCoords(), размеры и координаты
 import { GRID_SIZE, OUTLINE, GRID_TOTAL, SPAWN_CELLS, EXIT_CELLS } from './game-grid.js';
 
 const DEBUG = true;
-const TICK_RATE = 200;
+const TICK_RATE = 200;              // интервал игрового цикла, мс
 const ENEMY_HP = 30;
-const BULLET_SPEED = 0.2;
-const TOWER_FIRE_RATE = 1000;
+const BULLET_SPEED = 4;             // скорость пули в пикселях за тик
+const TOWER_FIRE_RATE = 1000;       // время перезарядки башни, мс
 const TOWER_RANGE = 3;
-const TOWER_TYPES = [{ name: "Башня", price: 40, range: TOWER_RANGE, damage: 10, color: "#5575FF" }];
+const TOWER_TYPES = [
+  { name: "Башня", price: 40, range: TOWER_RANGE, damage: 10, color: "#5575FF" }
+];
 
 let canvas, ctx, CELL_SIZE;
 let enemies = [], towers = [], bullets = [];
 let money = 100, lives = 20, wave = 0, tick = 0;
 let gameInterval = null, isRunning = false;
 let shopVisible = false, lastShopMsg = "";
+let isSpawningWave = false;         // объявлена глобально для спавна
 
-// 🛠 Логирование
+// Логирование
 function log(msg) { if (DEBUG) console.log(`[DEBUG] ${msg}`); }
 
-// 🚀 Инициализация
+// Инициализация
 window.addEventListener('load', () => {
   console.clear();
   canvas = window.GameGrid.canvas;
@@ -55,7 +57,7 @@ function setupUI() {
   }, true);
 }
 
-// 🎮 Start / Restart
+// Старт игры
 function startGame() {
   if (isRunning) return;
   log("Старт игры");
@@ -66,71 +68,116 @@ function startGame() {
   gameInterval = setInterval(gameLoop, TICK_RATE);
 }
 
+// Рестарт игры
 function restartGame() {
   clearInterval(gameInterval);
   isRunning = false;
   startGame();
 }
 
-// 🧟‍♂️ Враг
+// Враг
 class Enemy {
   constructor() {
     this.row = SPAWN_CELLS[0].row;
     this.col = SPAWN_CELLS[0].col;
+    this.x = (this.col + OUTLINE) * CELL_SIZE + CELL_SIZE / 2;
+    this.y = (this.row + OUTLINE) * CELL_SIZE + CELL_SIZE / 2;
     this.hp = ENEMY_HP;
     this.maxHp = ENEMY_HP;
     this.path = findPathAstar({ row: this.row, col: this.col }, EXIT_CELLS[0], towers);
     this.pathIdx = 0;
+    this.speed = 1.5; // скорость врага в пикселях за тик
+    this.targetPos = null; // следующая точка движения в пикселях
+    if (this.path && this.path.length > 0) {
+      this.setNextTarget();
+    }
     log(`Создан враг # row=${this.row}, col=${this.col}, path len=${this.path?.length || 0}`);
   }
 
-  update() {
-    if (!this.path || this.pathIdx >= this.path.length) {
-      lives--;
-      this.hp = 0;
-      log("Враг дошёл до выхода, lives=", lives);
+  setNextTarget() {
+    if (this.pathIdx >= this.path.length) {
+      this.targetPos = null;
       return;
     }
-    const next = this.path[this.pathIdx++];
-    this.row = next.row;
-    this.col = next.col;
+    const c = this.path[this.pathIdx];
+    this.targetPos = {
+      x: (c.col + OUTLINE) * CELL_SIZE + CELL_SIZE / 2,
+      y: (c.row + OUTLINE) * CELL_SIZE + CELL_SIZE / 2,
+      row: c.row,
+      col: c.col
+    };
+  }
+
+  update() {
     if (this.hp <= 0) return;
+
+    if (!this.targetPos) {
+      // Враг дошел до конца пути
+      lives--;
+      this.hp = 0;
+      log(`Враг дошёл до выхода, lives=${lives}`);
+      return;
+    }
+
+    // Движение к targetPos
+    const dx = this.targetPos.x - this.x;
+    const dy = this.targetPos.y - this.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < this.speed) {
+      // Достигли текущей точки пути — переход к следующей
+      this.x = this.targetPos.x;
+      this.y = this.targetPos.y;
+      this.row = this.targetPos.row;
+      this.col = this.targetPos.col;
+      this.pathIdx++;
+      this.setNextTarget();
+    } else {
+      // Двигаемся по направлению
+      this.x += (dx / dist) * this.speed;
+      this.y += (dy / dist) * this.speed;
+    }
   }
 
   draw() {
     if (this.hp <= 0) return;
-    const pos = cellToPos(this);
-    const cs = pos.cellSize;
-    ctx.font = `${cs * 0.8}px serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText("😈", pos.x, pos.y);
+    ctx.font = `${CELL_SIZE * 0.8}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText("😈", this.x, this.y);
     // HP bar
     ctx.fillStyle = '#e83438';
-    const w = cs * 0.42 * this.hp / this.maxHp;
-    ctx.fillRect(pos.x - cs * 0.21, pos.y - cs * 0.43, w, cs * 0.07);
+    const w = CELL_SIZE * 0.42 * this.hp / this.maxHp;
+    ctx.fillRect(this.x - CELL_SIZE * 0.21, this.y - CELL_SIZE * 0.43, w, CELL_SIZE * 0.07);
   }
 }
 
-// 🏰 Башня
+// Башня
 class Tower {
-  constructor(row, col) {
+  constructor(row, col, typeIdx = 0) {
     this.row = row;
     this.col = col;
-    this.range = this.col; // will pick right type price etc
-    this.damage = TOWER_TYPES[0].damage;
+    this.type = TOWER_TYPES[typeIdx];
+    this.range = this.type.range;
+    this.damage = this.type.damage;
     this.cooldown = 0;
   }
 
   update() {
-    if (this.cooldown > 0) { this.cooldown--; return; }
+    if (this.cooldown > 0) {
+      this.cooldown--;
+      return;
+    }
     const pos = cellToPos(this);
     let nearest = null, minD = Infinity;
     enemies.forEach(e => {
       if (e.hp <= 0) return;
-      const dx = e.x - pos.x, dy = e.y - pos.y;
+      const dx = e.x - pos.x;
+      const dy = e.y - pos.y;
       const d = Math.hypot(dx, dy);
-      if (d < this.range * pos.cellSize && d < minD) {
-        nearest = e; minD = d;
+      if (d <= this.range * CELL_SIZE && d < minD) {
+        nearest = e;
+        minD = d;
       }
     });
     if (nearest) {
@@ -142,21 +189,29 @@ class Tower {
 
   draw() {
     const pos = cellToPos(this);
-    const cs = pos.cellSize;
+    ctx.fillStyle = this.type.color;
+    ctx.font = `${CELL_SIZE * 0.9}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.fillText("🛡️", pos.x, pos.y);
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, this.range * cs, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#5092ff70"; ctx.lineWidth = 2;
-    ctx.setLineDash([4,9]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.arc(pos.x, pos.y, this.range * CELL_SIZE, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#5092ff70";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 9]);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 }
 
-// 💥 Пуля
+// Пуля
 class Bullet {
   constructor(sx, sy, target, dmg) {
-    this.x = sx; this.y = sy;
+    this.x = sx;
+    this.y = sy;
     this.target = target;
     this.damage = dmg;
+    this.speed = BULLET_SPEED;
   }
 
   update() {
@@ -164,42 +219,47 @@ class Bullet {
     const dx = this.target.x - this.x;
     const dy = this.target.y - this.y;
     const dist = Math.hypot(dx, dy);
-    if (dist < 5) {
+    if (dist < this.speed) {
       this.target.hp -= this.damage;
       log(`Пуля попала! HP врага теперь ${this.target.hp}`);
       return false;
     }
-    this.x += dx/dist * BULLET_SPEED;
-    this.y += dy/dist * BULLET_SPEED;
+    this.x += (dx / dist) * this.speed;
+    this.y += (dy / dist) * this.speed;
     return true;
   }
 
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, 5, 0, 2 * Math.PI);
-    ctx.fillStyle = "#fff"; ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.fill();
   }
 }
 
-// 🎲 Волны
+// Волны
 function nextWave() {
   wave++;
   log(`🌊 Волна ${wave} начинается`);
   spawnWaveEnemies(2 + wave * 2);
 }
 
-// 👾 Спавн
+// Спавн врагов
 function spawnWaveEnemies(n) {
   isSpawningWave = true;
   let count = 0;
   const t = setInterval(() => {
-    if (count >= n) { clearInterval(t); isSpawningWave = false; return; }
+    if (count >= n) {
+      clearInterval(t);
+      isSpawningWave = false;
+      return;
+    }
     enemies.push(new Enemy());
     count++;
   }, 600);
 }
 
-// 🔁 Цикл
+// Игровой цикл
 function gameLoop() {
   tick++;
   enemies.forEach(e => e.update());
@@ -210,15 +270,18 @@ function gameLoop() {
   if (!enemies.length && !isSpawningWave) nextWave();
 
   render();
+
   if (lives <= 0) {
     log("Игра окончена");
     clearInterval(gameInterval);
+    isRunning = false;
+    alert("Игра окончена! Нажмите F5 для новой игры.");
   }
 }
 
-// 🎨 Отрисовка
+// Отрисовка
 function render() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   window.GameGrid.drawGrid();
   towers.forEach(t => t.draw());
   bullets.forEach(b => b.draw());
@@ -226,7 +289,7 @@ function render() {
   renderStats();
 }
 
-// 📶 UI Stats
+// Отображение статистики
 function renderStats() {
   let el = document.getElementById("td-stats");
   if (!el) {
@@ -234,16 +297,20 @@ function renderStats() {
     el.id = "td-stats";
     Object.assign(el.style, {
       position: "fixed", left: "20px", top: "20px",
-      background: "#333", color: "#fff", padding: "8px", borderRadius: "4px"
+      background: "#333", color: "#fff", padding: "8px", borderRadius: "4px",
+      fontFamily: "Arial, sans-serif", fontSize: "16px", zIndex: 999
     });
     document.body.append(el);
   }
   el.innerHTML = `💔 ${lives} | 💵 ${money} | 🌊 ${wave}`;
 }
 
-// ⚙ Магазин
-function showShop(cell, x, y, msg="") {
-  if (!canPlace(cell)) { lastShopMsg="Нельзя"; return; }
+// Магазин башен
+function showShop(cell, x, y, msg = "") {
+  if (!canPlace(cell)) {
+    lastShopMsg = "Нельзя";
+    return;
+  }
   shopVisible = true;
   let shop = document.getElementById("shop");
   if (!shop) {
@@ -257,8 +324,9 @@ function showShop(cell, x, y, msg="") {
   }
   shop.style.left = x + "px";
   shop.style.top = y + "px";
+  shop.style.display = "block";
   shop.innerHTML = `<b>💰 ${money}</b> ${msg}<br>`;
-  TOWER_TYPES.forEach((t,i) => {
+  TOWER_TYPES.forEach((t, i) => {
     const btn = document.createElement("button");
     btn.textContent = `${t.name} (${t.price})`;
     btn.disabled = money < t.price;
@@ -276,38 +344,43 @@ function hideShop() {
   if (shop) shop.style.display = "none";
 }
 
+// Проверка, можно ли поставить башню
 function canPlace(cell) {
   if (towers.some(t => t.row === cell.row && t.col === cell.col)) return false;
   const blocks = [...towers, cell].map(c => `${c.row}_${c.col}`);
   const ok = isPathAvailable(blocks);
-  if (!ok) log("BFS blocked");
+  if (!ok) log("BFS blocked — путь заблокирован");
   return ok;
 }
 
+// Добавление башни
 function addTower(cell, idx) {
   const type = TOWER_TYPES[idx];
   if (money < type.price) return;
-  towers.push(new Tower(cell.row, cell.col));
+  towers.push(new Tower(cell.row, cell.col, idx));
   money -= type.price;
   log(`Установлена башня на ${cell.row},${cell.col}, 💰=${money}`);
 }
 
-// 📍 Pathfinding
+// Поиск соседей клетки (для поиска пути)
 function neighbors(c) {
   return [
-    { row: c.row+1, col: c.col }, { row: c.row-1, col: c.col },
-    { row: c.row, col: c.col+1 }, { row: c.row, col: c.col-1 }
-  ].filter(n => (
+    { row: c.row + 1, col: c.col },
+    { row: c.row - 1, col: c.col },
+    { row: c.row, col: c.col + 1 },
+    { row: c.row, col: c.col - 1 }
+  ].filter(n =>
     n.row >= 0 && n.row < GRID_SIZE &&
     n.col >= 0 && n.col < GRID_SIZE
-  ));
+  );
 }
 
+// Проверка доступности пути (BFS)
 function isPathAvailable(blockedKeys) {
   const blocked = new Set(blockedKeys);
   const queue = [SPAWN_CELLS[0]];
-  const visited = new Set([ `${SPAWN_CELLS[0].row}_${SPAWN_CELLS[0].col}` ]);
-  while(queue.length) {
+  const visited = new Set([`${SPAWN_CELLS[0].row}_${SPAWN_CELLS[0].col}`]);
+  while (queue.length) {
     const c = queue.shift();
     if (c.row === EXIT_CELLS[0].row && c.col === EXIT_CELLS[0].col) return true;
     for (const n of neighbors(c)) {
@@ -321,6 +394,7 @@ function isPathAvailable(blockedKeys) {
   return false;
 }
 
+// Поиск пути A* (используется для врагов)
 function findPathAstar(start, end, towersList) {
   const blocks = new Set(towersList.map(t => `${t.row}_${t.col}`));
   const open = [];
@@ -338,9 +412,8 @@ function findPathAstar(start, end, towersList) {
       const path = [];
       let k = key(end);
       while (k in cameFrom) {
-        const c = cameFrom[k];
-        path.unshift(c);
-        k = key(c);
+        path.unshift(cameFrom[k]);
+        k = key(cameFrom[k]);
       }
       return path;
     }
@@ -351,7 +424,7 @@ function findPathAstar(start, end, towersList) {
       const f = g + heuristic(n, end);
       if (!scores.has(k) || g < scores.get(k).g) {
         scores.set(k, { g, f });
-        cameFrom[k] = { row: n.row, col: n.col };
+        cameFrom[k] = curr;
         if (!open.some(o => key(o) === k)) open.push(n);
       }
     }
@@ -359,14 +432,98 @@ function findPathAstar(start, end, towersList) {
   return [];
 }
 
+// Эвристика Манхэттен для A*
 function heuristic(a, b) {
   return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
 }
 
-// ✅ Помощники
-function cellToPos(c) {
-  const cs = canvas.width / GRID_TOTAL;
-  const x = (c.col + OUTLINE) * cs + cs / 2;
-  const y = (c.row + OUTLINE) * cs + cs / 2;
-  return { x, y, cellSize: cs };
+// Помощь: функция для получения соседних клеток, учитывая границы и проходимость
+function getNeighbors(node, grid) {
+  const neighbors = [];
+  const directions = [
+    { dr: -1, dc: 0 }, // вверх
+    { dr: 1, dc: 0 },  // вниз
+    { dr: 0, dc: -1 }, // влево
+    { dr: 0, dc: 1 },  // вправо
+  ];
+
+  for (const dir of directions) {
+    const newRow = node.row + dir.dr;
+    const newCol = node.col + dir.dc;
+
+    if (
+      newRow >= 0 && newRow < grid.length &&
+      newCol >= 0 && newCol < grid[0].length &&
+      !grid[newRow][newCol].blocked // например, blocked - признак занятости клетки
+    ) {
+      neighbors.push(grid[newRow][newCol]);
+    }
+  }
+
+  return neighbors;
+}
+
+// Основная функция поиска пути A* (возвращает массив клеток пути или пустой массив, если путь не найден)
+function aStar(start, goal, grid) {
+  // Открытый список (клетки для проверки)
+  const openSet = [];
+  openSet.push(start);
+
+  // Карта для отслеживания откуда мы пришли
+  const cameFrom = new Map();
+
+  // gScore — стоимость пути от start до текущей клетки
+  const gScore = new Map();
+  gScore.set(start, 0);
+
+  // fScore — предполагаемая общая стоимость от start через текущую клетку до goal
+  const fScore = new Map();
+  fScore.set(start, heuristic(start, goal));
+
+  // Вспомогательная функция для получения ключа из клетки (если объекты не поддерживают сравнение)
+  function nodeKey(node) {
+    return `${node.row},${node.col}`;
+  }
+
+  while (openSet.length > 0) {
+    // Клетка с минимальным fScore
+    let current = openSet.reduce((a, b) => {
+      return (fScore.get(a) || Infinity) < (fScore.get(b) || Infinity) ? a : b;
+    });
+
+    if (current === goal) {
+      // Собираем путь
+      const path = [];
+      let temp = current;
+      while (temp) {
+        path.push(temp);
+        temp = cameFrom.get(temp);
+      }
+      path.reverse();
+      return path;
+    }
+
+    // Удаляем current из openSet
+    openSet.splice(openSet.indexOf(current), 1);
+
+    // Получаем соседей
+    const neighbors = getNeighbors(current, grid);
+    for (const neighbor of neighbors) {
+      const tentativeG = (gScore.get(current) || Infinity) + 1; // +1 — стоимость перехода между соседними клетками
+
+      if (tentativeG < (gScore.get(neighbor) || Infinity)) {
+        // Запомнить этот лучший путь
+        cameFrom.set(neighbor, current);
+        gScore.set(neighbor, tentativeG);
+        fScore.set(neighbor, tentativeG + heuristic(neighbor, goal));
+
+        if (!openSet.includes(neighbor)) {
+          openSet.push(neighbor);
+        }
+      }
+    }
+  }
+
+  // Путь не найден
+  return [];
 }
