@@ -1,0 +1,61 @@
+.game-console {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 30, 0.95);
+  padding: 10px 15px;
+  border-radius: 8px;
+  z-index: 1000;
+  display: flex;
+}
+
+.game-console input {
+  width: 300px;
+  background: #1e1e1e;
+  color: #fff;
+  border: none;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 14px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Анимация мигания текста */
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
+#footerStatus {
+  text-align: center;
+  padding: 6px 0;
+  font-size: 14px;
+  font-family: monospace;
+}
+
+/* Темная тема */
+body.dark #footerStatus.dev {
+  background-color: #ffd700; /* жёлтый */
+  color: #000; /* чёрный */
+}
+
+/* Светлая тема */
+body.light #footerStatus.dev {
+  background-color: #8b4513; /* коричневый */
+  color: #ffd700; /* жёлтый */
+}
+
+/* Мигание DEV */
+#devLabel {
+  margin-left: 8px;
+  font-weight: bold;
+  animation: blink 1s ease-in-out infinite;
+  text-transform: uppercase;
+}
