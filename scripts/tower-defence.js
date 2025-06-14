@@ -1,177 +1,231 @@
 // /scripts/tower-defence.js
 
-//Получаем доступ к API сетки
+// Получаем доступ к функции и объектам поля из game-grid.js
 const {
-  canvas,
-  ctx,
-  getColors,
-  GRID_SIZE,
-  GRID_TOTAL,
-  OUTLINE,
-  drawGrid,
-  onCellClick,
-  SPAWN_CELLS,
-  EXIT_CELLS
-} = window.GameGrid;
+  canvas, ctx, getColors, GRID_SIZE, GRID_TOTAL, OUTLINE,
+  drawGrid, getCellByCoords, SPAWN_CELLS, EXIT_CELLS
+} = window.GameGrid || {};
 
-// Игровые сущности
+// --- переменные игры
 let enemies = [];
 let towers = [];
 let money = 100;
 let selectedTowerType = 0;
-
-// Башни
+let bullets = [];
 const TOWER_TYPES = [
-    { name: "Пушка", price: 50, range: 2.5, damage: 8, color: "#6ecbf8" },
-    { name: "Огонь", price: 75, range: 3, damage: 5, color: "#f8663f" }
+  { name: "Башня", price: 40, range: 2.2, damage: 10, color: "#5575FF" }
 ];
 
-// Рыночная логика
-function renderShop() {
-    let shop = document.getElementById('shop');
-    if (!shop) {
-        shop = document.createElement('div');
-        shop.id = "shop";
-        document.body.insertBefore(shop, canvas);
-    }
-    shop.innerHTML = `<b>Деньги:</b> ${money}&nbsp;`;
-    TOWER_TYPES.forEach((type, id) => {
-        const btn = document.createElement('button');
-        btn.textContent = `${type.name} (${type.price})`;
-        btn.style.margin = "5px";
-        btn.disabled = money < type.price;
-        btn.onclick = () => selectedTowerType = id;
-        shop.appendChild(btn);
-    });
-}
-renderShop();
+// == Магазин башен ==
+let shopVisible = false;
+let shopCell = null;
 
-// Перевод клетки в координаты центра в px
-function cellToPos(cell) {
-    const size = parseFloat(canvas.style.width) || 300;
-    const cellSize = size / GRID_TOTAL;
-    return {
-        x: (cell.col + OUTLINE) * cellSize + cellSize / 2,
-        y: (cell.row + OUTLINE) * cellSize + cellSize / 2,
-        cellSize
+function showShop(cell, pageX, pageY) {
+  shopVisible = true;
+  shopCell = cell;
+  let shop = document.getElementById('shop');
+  if (!shop) {
+    shop = document.createElement('div');
+    shop.id = "shop";
+    document.body.appendChild(shop);
+  }
+  shop.style.display = "block";
+  shop.style.position = "fixed";
+  shop.style.left = (pageX || window.innerWidth/2) + "px";
+  shop.style.top = (pageY || window.innerHeight/2) + "px";
+  shop.style.zIndex = 2000;
+  shop.style.background = "#222";
+  shop.style.padding = "12px";
+  shop.style.borderRadius = "8px";
+  shop.innerHTML = `<b>💰 ${money}</b><br>`;
+  TOWER_TYPES.forEach((type, id) => {
+    const btn = document.createElement('button');
+    btn.textContent = `${type.name} (${type.price})`;
+    btn.style.margin = "6px";
+    btn.disabled = money < type.price;
+    btn.onclick = () => {
+      addTower(cell, id);
+      shop.style.display = "none";
+      shopVisible = false;
     };
+    shop.appendChild(btn);
+  });
+}
+function hideShop() {
+  let shop = document.getElementById('shop');
+  if (shop) shop.style.display = "none";
+  shopVisible = false;
+  shopCell = null;
 }
 
-// Враг
+// Запрет на блокировку пути врагам
+function canPlaceTower(cell) {
+  if (!cell) return false;
+  // Запрещаем ставить на крайние колонки (пути входа/выхода)
+  if (cell.col === 0 || cell.col === GRID_SIZE-1) return false;
+  // Запрещаем ставить на клетку где уже стоит башня
+  if (towers.find(t=>t.row===cell.row && t.col===cell.col)) return false;
+  // Запрещаем ставить на клетку если там сейчас враг
+  if (enemies.some(e => Math.floor(e.row)===cell.row && Math.floor(e.col)===cell.col)) return false;
+  return true;
+}
+
+function addTower(cell, id) {
+  if (canPlaceTower(cell) && money >= TOWER_TYPES[id].price) {
+    towers.push({ ...cell, ...TOWER_TYPES[id] });
+    money -= TOWER_TYPES[id].price;
+  }
+}
+
+// Событие клика по полю
+canvas.addEventListener("click", function(evt){
+  const cell = getCellByCoords(evt);
+  if (!cell) return;
+  // Открываем магазин по клику на пустую клетку
+  if (canPlaceTower(cell)) {
+    showShop(cell, evt.clientX, evt.clientY);
+  }
+});
+
+// Прячем магазин если клик вне него
+document.addEventListener("click", function(evt){
+  let shop = document.getElementById('shop');
+  if (shopVisible && shop && !shop.contains(evt.target)) {
+    hideShop();
+  }
+}, true);
+
+// == Враг ==
 class Enemy {
-    constructor() {
-        const spawn = SPAWN_CELLS[Math.floor(Math.random() * SPAWN_CELLS.length)];
-        this.row = spawn.row;
-        this.col = spawn.col;
-        this.hp = 30;
-        this.speed = 0.012 + Math.random()*0.008;
-        this.progress = 0;
-    }
-    update() {
-        this.progress += this.speed;
-        this.col = SPAWN_CELLS[0].col + this.progress;
-    }
-    isOut() {
-        return this.col >= GRID_SIZE;
-    }
-    draw() {
-        const { x, y, cellSize } = cellToPos({row: this.row, col: this.col});
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x, y, cellSize*0.28, 0, Math.PI*2);
-        ctx.fillStyle = this.hp > 0 ? "#43e140" : "#999";
-        ctx.shadowBlur = 10; ctx.shadowColor = "#111";
-        ctx.fill();
-        ctx.restore();
-        ctx.fillStyle = "#e83438";
-        ctx.fillRect(x-cellSize*0.2, y-cellSize*0.38, cellSize*0.4 * (this.hp/30), cellSize*0.09);
-    }
+  constructor() {
+    const spawn = SPAWN_CELLS[0];
+    this.row = spawn.row;
+    this.col = spawn.col;
+    this.hp = 35;
+    this.speed = 0.03;
+    this.progress = 0;
+  }
+  update() {
+    // Двигается вправо к выходу (по прямой)
+    this.progress += this.speed;
+    this.col = SPAWN_CELLS[0].col + this.progress;
+  }
+  isOut() {
+    return this.col >= GRID_SIZE;
+  }
+  draw() {
+    const {x, y, cellSize} = cellToPos({row: this.row, col: this.col});
+    ctx.save();
+    ctx.font = (cellSize*0.9) + "px serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("😈", x, y);
+    ctx.restore();
+    // HP бар
+    ctx.fillStyle = "#e83438";
+    ctx.fillRect(x-cellSize*0.21, y-cellSize*0.43, cellSize*0.42*Math.max(0,this.hp/35), cellSize*0.07);
+  }
 }
 
-// Враги появляются волнами
-function spawnEnemy() {
-    enemies.push(new Enemy());
+// == Расчёт центра клетки для отрисовки ==
+function cellToPos(cell) {
+  const size = parseFloat(canvas.style.width) || 300;
+  const cellSize = size / GRID_TOTAL;
+  return {
+    x: (cell.col + OUTLINE) * cellSize + cellSize / 2,
+    y: (cell.row + OUTLINE) * cellSize + cellSize / 2,
+    cellSize
+  };
 }
-setInterval(spawnEnemy, 2500);
 
-// Башни
+// == Башня ==
 function drawTowers() {
-    towers.forEach(tower => {
-        const {x, y, cellSize} = cellToPos(tower);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x, y, cellSize*0.33, 0, Math.PI*2);
-        ctx.fillStyle = tower.color;
-        ctx.shadowBlur = 8; ctx.shadowColor = "#111";
-        ctx.fill();
-        ctx.restore();
-        // Радиус атаки (полупрозрачный круг)
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x, y, tower.range*cellSize, 0, Math.PI*2);
-        ctx.strokeStyle = "#888a"; ctx.lineWidth = 2;
-        ctx.setLineDash([4, 7]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.restore();
-    });
+  towers.forEach(tower => {
+    const {x, y, cellSize} = cellToPos(tower);
+    ctx.save();
+    ctx.font = (cellSize*0.9) + "px serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🛡️", x, y);
+    ctx.restore();
+    // Радиус атаки
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, tower.range*cellSize, 0, Math.PI*2);
+    ctx.strokeStyle = "#5092ff80"; ctx.lineWidth = 2;
+    ctx.setLineDash([5, 9]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  });
 }
 
-// Атака
+// == Пульки ==
+function drawBullets() {
+  bullets.forEach(b=>{
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 7, 0, Math.PI*2);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+  });
+}
+
+function updateBullets() {
+  bullets.forEach((b,i)=>{
+    b.x += b.dx; b.y += b.dy;
+    // Если долетела до цели - удаляем
+    if (Math.abs(b.x-b.tx)<8 && Math.abs(b.y-b.ty)<8) bullets.splice(i,1);
+  });
+}
+
+// == Атака башен ==
 function shoot() {
-    for (let tower of towers) {
-        let best = null, bestDist = 1000;
-        for (let enemy of enemies) {
-            let dr = enemy.row - tower.row, dc = enemy.col - tower.col;
-            let dist = Math.sqrt(dr*dr + dc*dc);
-            if (dist < tower.range && dist < bestDist && enemy.hp > 0) {
-                best = enemy; bestDist = dist;
-            }
-        }
-        tower.cooldown = tower.cooldown || 0;
-        if (best && tower.cooldown <= 0) {
-            best.hp -= tower.damage;
-            tower.cooldown = 30; // кадров
-            // выстрел
-            const from = cellToPos(tower);
-            const to = cellToPos(best);
-            ctx.save();
-            ctx.strokeStyle = tower.color;
-            ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();
-            ctx.restore();
-        }
-        if (tower.cooldown > 0) tower.cooldown--;
+  towers.forEach(tower => {
+    // Найти ближайшего врага
+    let nearest = null, nearestDist = 999;
+    enemies.forEach(enemy => {
+      let dr = enemy.row - tower.row, dc = enemy.col - tower.col;
+      let dist = Math.sqrt(dr*dr + dc*dc);
+      if (dist <= tower.range && dist < nearestDist && enemy.hp > 0) {
+        nearest = enemy; nearestDist = dist;
+      }
+    });
+    tower.cooldown = tower.cooldown || 0;
+    if (nearest && tower.cooldown <= 0) {
+      nearest.hp -= tower.damage;
+      tower.cooldown = 35;
+      // Пулька визуально летит
+      const from = cellToPos(tower), to = cellToPos(nearest);
+      bullets.push({
+        x: from.x, y: from.y, tx: to.x, ty: to.y,
+        dx: (to.x - from.x)/20, dy: (to.y - from.y)/20
+      });
     }
+    if (tower.cooldown > 0) tower.cooldown--;
+  });
 }
 
-// Основной рендер
+// == Генерация врагов каждую секунду ==
+function spawnEnemy() {
+  enemies.push(new Enemy());
+}
+setInterval(spawnEnemy, 2500); // раз в 2.5 сек.
+
 function gameRender() {
-    drawGrid();
-    drawTowers();
-    enemies.forEach(e => e.draw());
+  drawGrid();
+  drawTowers();
+  drawBullets();
+  enemies.forEach(e => e.draw());
 }
 
 function gameUpdate() {
-    enemies = enemies.filter(e => e.hp > 0 && !e.isOut());
-    enemies.forEach(e => e.update());
-    shoot();
+  enemies = enemies.filter(e => e.hp > 0 && !e.isOut());
+  enemies.forEach(e => e.update());
+  updateBullets();
+  shoot();
 }
 
 function gameLoop() {
-    gameUpdate();
-    gameRender();
-    requestAnimationFrame(gameLoop);
+  gameUpdate();
+  gameRender();
+  requestAnimationFrame(gameLoop);
 }
 gameLoop();
-
-// Установка башен мышкой
-onCellClick(cell => {
-    if (selectedTowerType!==null && money >= TOWER_TYPES[selectedTowerType].price) {
-        if (towers.find(t => t.row === cell.row && t.col === cell.col)) return;
-        towers.push({ ...cell, ...TOWER_TYPES[selectedTowerType] });
-        money -= TOWER_TYPES[selectedTowerType].price;
-        selectedTowerType = null;
-        renderShop();
-    }
-});
