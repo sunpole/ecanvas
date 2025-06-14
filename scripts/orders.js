@@ -1,3 +1,5 @@
+// scripts/orders.js
+
 export const modules = [];
 
 const CELL_SIZE = 32;
