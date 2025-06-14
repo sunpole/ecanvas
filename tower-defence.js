@@ -1,4 +1,4 @@
-//scripts/tower-defence.js
+//tower-defence.js
 
 // Получаем доступ к API сетки
 const {
